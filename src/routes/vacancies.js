@@ -64,7 +64,7 @@ router.get('/vacancies', async (req, res) => {
   ]);
 
   res.render('vacancies', {
-    title: 'Вакансии', rows, total: n, page, pages: Math.max(1, Math.ceil(n / PAGE_SIZE)), f,
+    title: 'Вакансии', originalUrl: req.originalUrl, rows, total: n, page, pages: Math.max(1, Math.ceil(n / PAGE_SIZE)), f,
     sources: sources.map((r) => r.source), countries: countries.map((r) => r.location_country),
   });
 });

@@ -46,7 +46,8 @@ router.post('/applications/:id/events', async (req, res) => {
     [id, b.type, b.happened_at ? new Date(b.happened_at) : new Date(), b.note || null],
   );
   const { rows: [a] } = await query('SELECT vacancy_id FROM applications WHERE id = $1', [id]);
-  res.redirect(req.body.back === 'applications' ? '/applications' : `/vacancies/${a.vacancy_id}?msg=event`);
+  const back = /^\/(applications|vacancies)(\?|$)/.test(b.back) ? b.back : `/vacancies/${a.vacancy_id}?msg=event`;
+  res.redirect(back);
 });
 
 router.post('/events/:id/delete', async (req, res) => {

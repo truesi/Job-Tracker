@@ -26,13 +26,8 @@
       <td>
         <% if (!r.is_closed) { %>
         <form method="post" action="/applications/<%= r.id %>/events" class="inline quick-event">
-          <input type="hidden" name="back" value="applications">
-          <select name="type">
-            <option value="hr_response">Ответ HR</option><option value="screening">Скрининг</option>
-            <option value="test_task">Тестовое</option><option value="tech_interview">Тех. собес</option>
-            <option value="final_interview">Финал</option><option value="offer">Оффер</option>
-            <option value="rejected">Отказ</option><option value="withdrawn">Отозвал</option>
-          </select>
+          <input type="hidden" name="back" value="/applications">
+          <select name="type"><%- include('partials/event-options') %></select>
           <button class="btn btn-sm">+</button>
         </form>
         <% } %>

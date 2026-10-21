@@ -62,7 +62,14 @@
         <% } else { %><span class="muted">не указана</span><% } %>
       </td>
       <td>
-        <% if (v.application_id) { %><span class="stage <%= v.last_event === 'rejected' ? 'stage-rejected' : v.is_closed ? 'stage-closed' : '' %>"><%= v.stage_label %></span>
+        <% if (v.application_id && !v.is_closed) { %>
+          <form method="post" action="/applications/<%= v.application_id %>/events" class="inline" data-autosubmit>
+            <input type="hidden" name="back" value="<%= originalUrl %>">
+            <select name="type" class="stage" title="Добавить событие отклика">
+              <option selected disabled hidden><%= v.stage_label %></option><%- include('partials/event-options') %>
+            </select>
+          </form>
+        <% } else if (v.application_id) { %><span class="stage <%= v.last_event === 'rejected' ? 'stage-rejected' : v.is_closed ? 'stage-closed' : '' %>"><%= v.stage_label %></span>
         <% } else { %><span class="status status-<%= v.status %>"><%= fmt.labels.status[v.status] %></span><% } %>
       </td>
       <td class="small"><%= fmt.daysAgo(v.first_seen_at) %></td>
