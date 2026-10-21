@@ -1,0 +1,146 @@
+[
+  {
+    "q": "There's an index on `(last_name, first_name)`. Can a query `WHERE first_name = 'Ann'` seek through it efficiently?",
+    "options": ["No: first_name isn't the leading column", "Yes, column order doesn't matter", "Yes, but only with LIKE", "Only if the table is small"],
+    "answer": 0,
+    "explain": "The index is sorted by last_name first, so all 'Ann's are scattered across it. At best the database scans the whole index (or a skip scan in PostgreSQL 18 / MySQL 8.0.13+ helps when last_name has few distinct values)."
+  },
+  {
+    "q": "Users log in with any letter case. There's an index on `email`. Why is `WHERE lower(email) = ?` slow, and what's the fix?",
+    "options": ["The index stores email, not lower(email); create an expression index on lower(email)", "lower() is slow; do it in Java", "Indexes don't support strings", "Add an index on email DESC"],
+    "answer": 0,
+    "explain": "An expression index `CREATE INDEX ON users (lower(email))` matches the predicate exactly. Alternatives: store a normalized column, or use the citext type."
+  },
+  {
+    "q": "Which predicate can a plain B-tree index on `name` NOT serve?",
+    "options": ["`name LIKE '%son'`", "`name = 'Johnson'`", "`name LIKE 'John%'` (with a suitable collation/opclass)", "`name BETWEEN 'A' AND 'C'`"],
+    "answer": 0,
+    "explain": "A leading wildcard means no known prefix to seek to. In PostgreSQL a trigram GIN index (`pg_trgm`) handles `LIKE '%son%'`."
+  },
+  {
+    "q": "Which index best serves `WHERE status = ? AND created_at > ?`?",
+    "options": ["(status, created_at)", "(created_at, status)", "Two separate indexes are always better", "(created_at) alone"],
+    "answer": 0,
+    "explain": "Equality first, range last: the seek goes to `status = X` and then reads one contiguous range of created_at. With created_at first, status could only be filtered, not used for the seek."
+  },
+  {
+    "q": "What is an index-only scan?",
+    "options": ["The query is answered from the index alone, without reading table rows", "A scan that reads only the index root", "A full scan of all indexes", "A scan that ignores WHERE"],
+    "answer": 0,
+    "explain": "It needs every referenced column in the index (keys or INCLUDE columns). In PostgreSQL it also depends on the visibility map being up to date."
+  },
+  {
+    "q": "In InnoDB, what does a secondary index entry point to?",
+    "options": ["The primary key value of the row", "The physical row address", "The page number of the row", "The previous index entry"],
+    "answer": 0,
+    "explain": "So a secondary lookup goes through the secondary index, then through the clustered PK index. That's also why wide PKs make all secondary indexes larger."
+  },
+  {
+    "q": "Why are random UUIDv4 primary keys a problem for InnoDB (and B-trees in general)?",
+    "options": ["Inserts land at random positions: page splits, fragmentation, poor cache locality", "UUIDs can't be indexed", "UUIDs collide often", "They make SELECT by primary key O(n)"],
+    "answer": 0,
+    "explain": "Sequential keys append at the right edge of the tree, so the hot pages stay in memory. UUIDv7 keeps the uniqueness of UUIDs with time ordering."
+  },
+  {
+    "q": "A `gender` column has 2 values evenly distributed, and it has an index. Why does the planner ignore it?",
+    "options": ["Low selectivity: reading half the table through an index costs more than a sequential scan", "Indexes don't work on text columns", "The planner never uses indexes on columns with NULLs", "The index must be rebuilt"],
+    "answer": 0,
+    "explain": "Random page reads for 50% of the rows are slower than one sequential pass. Such an index mostly just slows down writes."
+  },
+  {
+    "q": "Which PostgreSQL index type fits `WHERE attributes @> '{\"color\": \"red\"}'` on a jsonb column?",
+    "options": ["GIN", "B-tree", "Hash", "BRIN"],
+    "answer": 0,
+    "explain": "GIN indexes each key/value inside the document, which is what containment needs. A B-tree compares whole values only."
+  },
+  {
+    "q": "A 2-billion-row append-only events table is queried by time ranges. You want the smallest possible index. Which type?",
+    "options": ["BRIN", "B-tree", "GIN", "Hash"],
+    "answer": 0,
+    "explain": "BRIN stores min/max per block range, kilobytes instead of gigabytes. It works because rows are physically ordered by time; random order would make it useless."
+  },
+  {
+    "q": "98% of orders are COMPLETED, and queries only look at the few ACTIVE ones. What's the best index?",
+    "options": ["A partial index: CREATE INDEX ... ON orders (created_at) WHERE status = 'ACTIVE'", "An index on status", "An index on (status, everything)", "No index: use a materialized view"],
+    "answer": 0,
+    "explain": "A partial index covers only the rows that matter: tiny, always cached, cheap to maintain. The query's WHERE must imply the index predicate."
+  },
+  {
+    "q": "What's the main cost of having many indexes on a write-heavy table?",
+    "options": ["Slower inserts, updates and deletes, plus extra disk, memory and vacuum work", "Slower SELECTs", "More deadlocks on reads", "Nothing: indexes are free once created"],
+    "answer": 0,
+    "explain": "Each index is updated on every insert and delete. In PostgreSQL extra indexes also prevent HOT updates when an indexed column changes."
+  },
+  {
+    "q": "How do you add an index to a large production PostgreSQL table without blocking writes?",
+    "options": ["CREATE INDEX CONCURRENTLY", "CREATE INDEX inside a transaction", "LOCK TABLE ... IN SHARE MODE first", "Use a hash index"],
+    "answer": 0,
+    "explain": "A plain CREATE INDEX blocks writes for the whole build. CONCURRENTLY takes longer and can't run inside a transaction block; if it fails it leaves an INVALID index to drop."
+  },
+  {
+    "q": "Which queries can a PostgreSQL hash index serve?",
+    "options": ["Equality only", "Equality and ranges", "Ranges only", "LIKE with prefix"],
+    "answer": 0,
+    "explain": "Hashes have no order. Hash indexes are WAL-logged and crash-safe since PostgreSQL 10, but a B-tree is usually just as good."
+  },
+  {
+    "q": "EXPLAIN ANALYZE shows `rows=10` estimated and `rows=1000000` actual at a scan. What's the likely cause and first fix?",
+    "options": ["Stale or insufficient statistics; run ANALYZE (maybe raise the statistics target)", "The index is corrupt; REINDEX", "The query needs a hint", "The table needs VACUUM FULL"],
+    "answer": 0,
+    "explain": "Bad estimates lead to bad plans (nested loops over a million rows). For correlated columns, extended statistics (`CREATE STATISTICS`) help."
+  },
+  {
+    "q": "With an index on `(a, b)`, why is `WHERE a = 5 ORDER BY b LIMIT 10` fast?",
+    "options": ["Rows come out of the index already sorted by b, so it reads just 10 entries", "LIMIT always makes queries fast", "The index is used only for the filter, and the sort is in memory", "b is ignored"],
+    "answer": 0,
+    "explain": "No sort node at all: the scan stops after 10 rows. With only an index on `a`, all matching rows would be fetched and sorted."
+  },
+  {
+    "q": "How can PostgreSQL use two separate indexes on a and b for `WHERE a = 1 OR b = 2`?",
+    "options": ["A BitmapOr of two bitmap index scans", "It can't; it always does a seq scan", "It uses only the first index", "It merges the indexes permanently"],
+    "answer": 0,
+    "explain": "Each index produces a bitmap of matching pages, the bitmaps are OR-ed, and the heap is read in page order. Rewriting as UNION is another option."
+  },
+  {
+    "q": "MySQL: `phone` is VARCHAR with an index. Why can `WHERE phone = 5551234` (a number) ignore the index?",
+    "options": ["The column is converted to a number for every row, so the index can't be used", "Numbers can't be compared with strings", "VARCHAR indexes only support LIKE", "It's a syntax error"],
+    "answer": 0,
+    "explain": "A type mismatch forces a conversion on the column side. Always bind parameters with the column's type (watch JDBC setters and ORMs)."
+  },
+  {
+    "q": "How deep is a typical B-tree index on a 100-million-row table?",
+    "options": ["3–4 levels", "About 27 levels", "1 level", "100 levels"],
+    "answer": 0,
+    "explain": "With a few hundred keys per 8 KB page, each level multiplies capacity by hundreds. The upper levels are almost always in memory."
+  },
+  {
+    "q": "How do you find indexes that are never used in PostgreSQL?",
+    "options": ["Check pg_stat_user_indexes for idx_scan = 0", "EXPLAIN every query", "pg_indexes shows a 'used' flag", "Indexes are dropped automatically when unused"],
+    "answer": 0,
+    "explain": "Check over a long period and on all replicas (reads may go there), and keep indexes that back unique or primary key constraints."
+  },
+  {
+    "q": "What is a HOT update in PostgreSQL?",
+    "options": ["An update that writes the new row version on the same page and touches no index", "An update holding a hot lock", "An update made by autovacuum", "An update to a cached row"],
+    "answer": 0,
+    "explain": "Possible when no indexed column changes and the page has free space (a lower fillfactor helps). It saves index writes and bloat."
+  },
+  {
+    "q": "PostgreSQL: `order_items.order_id` references `orders.id` but has no index. What suffers?",
+    "options": ["Joins from orders to items and deleting orders (each delete scans order_items)", "Nothing: PostgreSQL indexes foreign keys automatically", "Only inserts into orders", "Only SELECT * on orders"],
+    "answer": 0,
+    "explain": "PostgreSQL indexes the referenced side (it must be unique) but not the referencing column. Deleting a parent row has to check the children, a full scan without an index."
+  },
+  {
+    "q": "Why can an Index Only Scan in PostgreSQL still read table pages?",
+    "options": ["Pages not marked all-visible in the visibility map must be checked in the heap", "Index-only scans always read the table", "The index stores only half the columns", "To update statistics"],
+    "answer": 0,
+    "explain": "The index doesn't hold visibility (MVCC) information. EXPLAIN ANALYZE shows `Heap Fetches`; VACUUM keeps the visibility map current."
+  },
+  {
+    "q": "Which of these is enforced by an index in PostgreSQL?",
+    "options": ["A UNIQUE constraint", "A NOT NULL constraint", "A CHECK constraint", "A DEFAULT value"],
+    "answer": 0,
+    "explain": "UNIQUE and PRIMARY KEY constraints create unique B-tree indexes. Exclusion constraints use GiST (or other) indexes."
+  }
+]

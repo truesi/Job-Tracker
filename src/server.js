@@ -6,6 +6,7 @@ import { processInbox } from './inbox.js';
 import { router as adminRouter } from './routes/admin.js';
 import { router as vacancyRouter } from './routes/vacancies.js';
 import { router as applicationRouter } from './routes/applications.js';
+import { router as prepRouter } from './routes/prep.js';
 import * as fmt from './format.js';
 import { runStatus } from './collector.js';
 
@@ -32,6 +33,7 @@ const wrap = (router) => {
 app.use(wrap(adminRouter));
 app.use(wrap(vacancyRouter));
 app.use(wrap(applicationRouter));
+app.use(wrap(prepRouter));
 
 app.use((req, res) => res.status(404).render('error', { title: 'Не найдено', message: 'Страница не найдена' }));
 app.use((err, req, res, next) => {

@@ -1,0 +1,152 @@
+[
+  {
+    "q": "Почему этот запрос падает в PostgreSQL?",
+    "code": "SELECT price * qty AS total\nFROM order_lines\nWHERE total > 100;",
+    "options": ["WHERE вычисляется раньше SELECT, поэтому алиаса ещё нет", "Алиасы не могут содержать арифметику", "AS нельзя для вычисляемых столбцов", "total зарезервированное слово"],
+    "answer": 0,
+    "explain": "Повтори выражение в WHERE или оберни запрос в подзапрос. ORDER BY может использовать алиас, потому что выполняется после SELECT."
+  },
+  {
+    "q": "Чем отличаются WHERE и HAVING?",
+    "options": ["WHERE фильтрует строки до группировки; HAVING фильтрует группы после агрегации", "HAVING быстрее", "В WHERE нельзя AND/OR", "Они взаимозаменяемы"],
+    "answer": 0,
+    "explain": "Агрегатные условия вроде `COUNT(*) > 5` имеют смысл только в HAVING. Фильтры по обычным столбцам место в WHERE, чтобы группировалось меньше строк."
+  },
+  {
+    "q": "В таблице 10 строк; у 3 из них NULL в `email`. Что вернут `COUNT(*)` и `COUNT(email)`?",
+    "options": ["10 и 7", "10 и 10", "7 и 7", "10 и 3"],
+    "answer": 0,
+    "explain": "`COUNT(*)` считает строки; `COUNT(expr)` считает не-NULL значения."
+  },
+  {
+    "q": "Что вернёт `SELECT * FROM users WHERE deleted_at = NULL;`?",
+    "options": ["Никогда ни одной строки", "Строки, где deleted_at равен NULL", "Все строки", "Синтаксическую ошибку"],
+    "answer": 0,
+    "explain": "Сравнение с NULL даёт UNKNOWN, а WHERE оставляет только TRUE. Используй `IS NULL`."
+  },
+  {
+    "q": "В `blocked_users.user_id` есть один NULL. Что вернёт запрос?",
+    "code": "SELECT * FROM users\nWHERE id NOT IN (SELECT user_id FROM blocked_users);",
+    "options": ["Ни одной строки", "Всех незаблокированных пользователей", "Всех пользователей", "Ошибку"],
+    "answer": 0,
+    "explain": "`id NOT IN (1, NULL)` означает `id <> 1 AND id <> NULL`, что даёт UNKNOWN для каждой строки. У `NOT EXISTS` такой ловушки нет."
+  },
+  {
+    "q": "Что произойдёт с клиентами без заказов?",
+    "code": "SELECT c.name, o.id\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nWHERE o.status = 'PAID';",
+    "options": ["Они пропадут: WHERE превращает запрос во внутренний join", "Они появятся с NULL в столбцах заказа", "Они появятся один раз со status NULL", "Запрос упадёт"],
+    "answer": 0,
+    "explain": "Для клиентов без совпадений `o.status` равен NULL, поэтому условие WHERE не TRUE. Перенеси `o.status = 'PAID'` в ON."
+  },
+  {
+    "q": "Зарплаты 100, 100, 90. Что дадут RANK() и DENSE_RANK() для 90 (сортировка по salary DESC)?",
+    "options": ["RANK 3, DENSE_RANK 2", "RANK 2, DENSE_RANK 2", "RANK 3, DENSE_RANK 3", "RANK 2, DENSE_RANK 3"],
+    "answer": 0,
+    "explain": "RANK оставляет пропуски после равных значений; DENSE_RANK нет. ROW_NUMBER дал бы 1, 2, 3 с произвольным порядком равных."
+  },
+  {
+    "q": "Почему стоит предпочесть `UNION ALL`, а не `UNION`, когда дубликатов не может быть или они не мешают?",
+    "options": ["UNION убирает дубликаты лишней сортировкой или хешированием, а это стоит времени", "UNION ALL сортирует результат", "UNION падает на дубликатах", "Разницы нет"],
+    "answer": 0,
+    "explain": "UNION = UNION ALL + DISTINCT. На больших результатах дедупликация может занимать большую часть времени запроса."
+  },
+  {
+    "q": "Какой запрос даст трёх самых высокооплачиваемых сотрудников в каждом отделе?",
+    "options": ["ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC) в CTE, затем WHERE rn <= 3", "GROUP BY dept ORDER BY salary DESC LIMIT 3", "SELECT MAX(salary) ... GROUP BY dept", "ORDER BY dept, salary DESC LIMIT 3"],
+    "answer": 0,
+    "explain": "LIMIT применяется ко всему результату, а не к каждой группе. Бери DENSE_RANK вместо ROW_NUMBER, если на границе нужно включить всех с равной зарплатой."
+  },
+  {
+    "q": "Какой запрос правильно вернёт вторую по величине уникальную зарплату (или NULL, если её нет)?",
+    "options": ["SELECT MAX(salary) FROM emp WHERE salary < (SELECT MAX(salary) FROM emp)", "SELECT salary FROM emp ORDER BY salary DESC LIMIT 1 OFFSET 1", "SELECT MAX(salary) - 1 FROM emp", "SELECT salary FROM emp ORDER BY salary DESC LIMIT 2"],
+    "answer": 0,
+    "explain": "OFFSET 1 без DISTINCT снова вернёт максимальную зарплату, если она у двоих, и вернёт ноль строк (а не NULL), если сотрудник один."
+  },
+  {
+    "q": "Как найти email-адреса, которые встречаются больше одного раза?",
+    "options": ["GROUP BY email HAVING COUNT(*) > 1", "WHERE COUNT(email) > 1", "SELECT DISTINCT email", "ORDER BY email и сравнить соседей в приложении"],
+    "answer": 0,
+    "explain": "Агрегатные условия пишутся в HAVING. Чтобы удалить дубликаты, оставив одну строку, пронумеруй их через ROW_NUMBER() OVER (PARTITION BY email ORDER BY id) и удали rn > 1."
+  },
+  {
+    "q": "Как посчитать нарастающий итог дневной выручки?",
+    "options": ["SUM(revenue) OVER (ORDER BY day)", "SUM(revenue) GROUP BY day", "SUM(revenue) OVER (PARTITION BY day)", "CUMSUM(revenue)"],
+    "answer": 0,
+    "explain": "С ORDER BY и без явного frame окно идёт от начала до текущей строки (RANGE, поэтому одинаковые значения `day` суммируются вместе)."
+  },
+  {
+    "q": "Почему `OFFSET 100000 LIMIT 20` становится медленным?",
+    "options": ["База всё равно формирует и выбрасывает 100 000 пропущенных строк", "OFFSET отключает индексы", "LIMIT заставляет делать полную сортировку", "Он блокирует таблицу"],
+    "answer": 0,
+    "explain": "Keyset-пагинация (`WHERE id < :lastSeen ORDER BY id DESC LIMIT 20`) сразу переходит к нужной позиции через индекс."
+  },
+  {
+    "q": "Чем в PostgreSQL отличаются TRUNCATE и DELETE (без WHERE)?",
+    "options": ["TRUNCATE очищает таблицу целиком, не просматривая строки; DELETE удаляет строки по одной", "TRUNCATE в PostgreSQL нельзя откатить", "DELETE сбрасывает identity-последовательности", "TRUNCATE вызывает построчные DELETE-триггеры"],
+    "answer": 0,
+    "explain": "TRUNCATE в PostgreSQL транзакционен и намного быстрее, но берёт лок ACCESS EXCLUSIVE и не вызывает построчные ON DELETE триггеры."
+  },
+  {
+    "q": "На `created_at` есть B-tree индекс. Почему этот запрос может его не использовать?",
+    "code": "SELECT * FROM orders\nWHERE DATE(created_at) = '2024-03-01';",
+    "options": ["Функция над столбцом делает предикат non-sargable", "DATE() нельзя использовать в WHERE", "Индексы не работают с timestamp", "Литерал должен быть timestamp"],
+    "answer": 0,
+    "explain": "Индекс хранит `created_at`, а не `DATE(created_at)`. Используй диапазон `created_at >= '2024-03-01' AND created_at < '2024-03-02'` или индекс по выражению."
+  },
+  {
+    "q": "Что возвращает `LAG(amount) OVER (ORDER BY month)`?",
+    "options": ["amount предыдущей строки (NULL для первой)", "amount следующей строки", "Разницу с предыдущей строкой", "amount первой строки"],
+    "answer": 0,
+    "explain": "Изменение месяц к месяцу считается как `amount - LAG(amount) OVER (ORDER BY month)`. LEAD смотрит вперёд."
+  },
+  {
+    "q": "Для чего обычно используют `WITH RECURSIVE`?",
+    "options": ["Для обхода иерархий вроде оргструктур или деревьев категорий", "Чтобы гонять запрос в цикле, пока он не станет быстрым", "Для создания временных таблиц", "Для повтора упавших транзакций"],
+    "answer": 0,
+    "explain": "Якорный запрос выбирает корень, а рекурсивная часть присоединяет детей к уже найденным строкам, пока новые строки не перестанут появляться."
+  },
+  {
+    "q": "Какой запрос находит клиентов без заказов и остаётся корректным, даже если в `orders.customer_id` есть NULL?",
+    "options": ["NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id)", "c.id NOT IN (SELECT customer_id FROM orders)", "c.id <> ALL (SELECT customer_id FROM orders)", "INNER JOIN orders o ON o.customer_id <> c.id"],
+    "answer": 0,
+    "explain": "NOT EXISTS вычисляется только в TRUE или FALSE. LEFT JOIN с `WHERE o.id IS NULL` тоже корректен."
+  },
+  {
+    "q": "Что сделает PostgreSQL с этим запросом (`id` первичный ключ emp)?",
+    "code": "SELECT dept, name, COUNT(*)\nFROM emp\nGROUP BY dept;",
+    "options": ["Ошибка: name должен быть в GROUP BY или в агрегате", "Вернёт произвольное имя для каждого отдела", "Вернёт все имена через запятую", "Проигнорирует name"],
+    "answer": 0,
+    "explain": "MySQL без ONLY_FULL_GROUP_BY раньше возвращал произвольное значение. Группировка по первичному ключу разрешила бы `name` (функциональная зависимость)."
+  },
+  {
+    "q": "Оценки 5, NULL, 3. Чему равен `AVG(rating)`?",
+    "options": ["4", "2.67", "NULL", "Ошибка"],
+    "answer": 0,
+    "explain": "Агрегаты пропускают NULL: (5 + 3) / 2. Используй `AVG(COALESCE(rating, 0))`, если NULL должен считаться нулём."
+  },
+  {
+    "q": "У клиентов много заказов и много платежей. Что здесь не так?",
+    "code": "SELECT c.id, SUM(p.amount)\nFROM customers c\nJOIN orders o   ON o.customer_id = c.id\nJOIN payments p ON p.customer_id = c.id\nGROUP BY c.id;",
+    "options": ["Каждый платёж посчитан столько раз, сколько у клиента заказов: сумма умножена", "Ничего", "SUM нельзя использовать с двумя join", "Клиенты без платежей вызовут ошибку"],
+    "answer": 0,
+    "explain": "Join двух независимых таблиц один-ко-многим даёт заказы × платежи строк на клиента. Сначала агрегируй каждую дочернюю таблицу в своём подзапросе, потом соединяй."
+  },
+  {
+    "q": "Как в PostgreSQL вставить строку или обновить её, если ключ уже есть?",
+    "options": ["INSERT ... ON CONFLICT (key) DO UPDATE SET ...", "INSERT OR REPLACE", "UPSERT INTO", "REPLACE INTO"],
+    "answer": 0,
+    "explain": "ON CONFLICT атомарен и без гонок. Нужен уникальный индекс или ограничение на столбцах конфликта. `EXCLUDED.col` ссылается на значение, которое пытались вставить."
+  },
+  {
+    "q": "Почему нельзя написать `WHERE ROW_NUMBER() OVER (...) = 1`?",
+    "options": ["Оконные функции вычисляются после WHERE, на шаге SELECT", "ROW_NUMBER требует GROUP BY", "В PostgreSQL это разрешено", "Оконные функции можно использовать только в ORDER BY"],
+    "answer": 0,
+    "explain": "Вычисли её в подзапросе или CTE, а фильтруй снаружи. В некоторых базах для этого есть QUALIFY; в PostgreSQL нет."
+  },
+  {
+    "q": "В `customers` 100 строк, у каждого клиента ровно 3 заказа. Сколько строк вернёт INNER JOIN по customer_id?",
+    "options": ["300", "100", "103", "30 000"],
+    "answer": 0,
+    "explain": "Каждая строка клиента повторяется по разу на каждый совпавший заказ. CROSS JOIN дал бы 100 × 300 = 30 000."
+  }
+]

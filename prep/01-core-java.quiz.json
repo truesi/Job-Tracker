@@ -1,0 +1,159 @@
+[
+  {
+    "q": "What does this print?",
+    "code": "Integer a = 127, b = 127;\nInteger c = 128, d = 128;\nSystem.out.println((a == b) + \" \" + (c == d));",
+    "options": ["true false", "true true", "false false", "false true"],
+    "answer": 0,
+    "explain": "Autoboxing calls `Integer.valueOf`, which caches -128..127 by default. 127 returns the same cached object; 128 creates two different objects, so `==` is false."
+  },
+  {
+    "q": "What does this print?",
+    "code": "String s1 = \"java\";\nString s2 = new String(\"java\");\nString s3 = s2.intern();\nSystem.out.println((s1 == s2) + \" \" + (s1 == s3));",
+    "options": ["false true", "true true", "false false", "true false"],
+    "answer": 0,
+    "explain": "`new String` always creates a new object, so `s1 != s2`. `intern()` returns the pooled instance, which is the literal `s1`."
+  },
+  {
+    "q": "A class overrides `equals()` but not `hashCode()`. You add two equal instances to a `HashSet`. What happens?",
+    "options": ["Both instances will most likely end up in the set", "The set keeps only one, because HashSet relies on equals()", "Compile error: equals and hashCode must be overridden together", "HashSet throws IllegalStateException"],
+    "answer": 0,
+    "explain": "HashSet first picks a bucket by `hashCode()`. The default identity hash codes differ, so the two objects land in different buckets and `equals()` is never consulted."
+  },
+  {
+    "q": "What does `f()` return?",
+    "code": "static int f() {\n    try {\n        return 1;\n    } finally {\n        return 2;\n    }\n}",
+    "options": ["2", "1", "Compile error", "It throws an exception"],
+    "answer": 0,
+    "explain": "A `return` in `finally` overrides the value returned from `try` (and would also swallow an exception). That's why returning from `finally` is considered a bug."
+  },
+  {
+    "q": "What does this print?",
+    "code": "static void change(StringBuilder sb) {\n    sb.append(\"!\");\n    sb = new StringBuilder(\"new\");\n}\n\nStringBuilder sb = new StringBuilder(\"hi\");\nchange(sb);\nSystem.out.println(sb);",
+    "options": ["hi!", "hi", "new", "new!"],
+    "answer": 0,
+    "explain": "Java passes the reference by value. `append` mutates the shared object; reassigning the parameter only changes the local copy of the reference."
+  },
+  {
+    "q": "What does this print?",
+    "code": "static void m(Object o) { System.out.println(\"Object\"); }\nstatic void m(String s) { System.out.println(\"String\"); }\n\nm(null);",
+    "options": ["String", "Object", "Compile error: ambiguous call", "NullPointerException"],
+    "answer": 0,
+    "explain": "Overload resolution picks the most specific applicable method. `String` is more specific than `Object`. With `m(String)` and `m(Integer)` it would be ambiguous."
+  },
+  {
+    "q": "What does this print?",
+    "code": "class A { static String name() { return \"A\"; } }\nclass B extends A { static String name() { return \"B\"; } }\n\nA a = new B();\nSystem.out.println(a.name());",
+    "options": ["A", "B", "Compile error", "NullPointerException"],
+    "answer": 0,
+    "explain": "Static methods are hidden, not overridden. The call is bound at compile time to the declared type `A`."
+  },
+  {
+    "q": "A method should add `Integer`s to a list that may be `List<Integer>`, `List<Number>` or `List<Object>`. Which parameter type fits?",
+    "options": ["`List<? super Integer>`", "`List<? extends Integer>`", "`List<Number>`", "`List<?>`"],
+    "answer": 0,
+    "explain": "PECS: a consumer of values uses `super`. `? extends` lets you read but not add, and `List<Number>` rejects `List<Integer>` because generics are invariant."
+  },
+  {
+    "q": "Why can't you write `new T()` inside a generic class?",
+    "options": ["Type erasure: T isn't known at runtime", "T might be an interface", "Generic classes can't have constructors", "It's allowed if T has a no-arg constructor"],
+    "answer": 0,
+    "explain": "Generic type arguments are erased at compile time. The usual workaround is passing a `Class<T>` or a `Supplier<T>`."
+  },
+  {
+    "q": "What happens here?",
+    "code": "Object[] arr = new String[1];\narr[0] = 42;",
+    "options": ["Compiles, throws ArrayStoreException at runtime", "Compile error", "Works, arr[0] is 42", "Throws ClassCastException"],
+    "answer": 0,
+    "explain": "Arrays are covariant, so the assignment compiles, but the array knows its runtime component type (`String`) and rejects an `Integer`."
+  },
+  {
+    "q": "Is `load()` called here?",
+    "code": "String v = Optional.of(\"x\").orElse(load());",
+    "options": ["Yes, always", "No, only when the Optional is empty", "Only on the first call", "Compile error"],
+    "answer": 0,
+    "explain": "`orElse` takes a value, so its argument is evaluated before the call. Use `orElseGet(() -> load())` for lazy evaluation."
+  },
+  {
+    "q": "`Collectors.toMap(User::getEmail, u -> u)` meets two users with the same email. What happens?",
+    "options": ["IllegalStateException: duplicate key", "The last user wins", "The first user wins", "Both are kept in a list"],
+    "answer": 0,
+    "explain": "Without a merge function `toMap` throws on duplicate keys. Pass a third argument such as `(a, b) -> a` to resolve conflicts."
+  },
+  {
+    "q": "What does this print?",
+    "code": "Stream.of(1, 2, 3)\n      .peek(System.out::print)\n      .filter(x -> x > 1);",
+    "options": ["Nothing", "123", "23", "Compile error"],
+    "answer": 0,
+    "explain": "Streams are lazy: intermediate operations run only when a terminal operation (`collect`, `forEach`, `count`...) is invoked."
+  },
+  {
+    "q": "Which statement about Java records is true?",
+    "options": ["Fields are private final; equals, hashCode and toString are generated", "A record can extend another class", "A record can declare extra instance fields", "Records generate setters"],
+    "answer": 0,
+    "explain": "Records are implicitly final, extend `java.lang.Record`, and can't add instance fields. They can implement interfaces and add static fields and methods."
+  },
+  {
+    "q": "What does `new Child()` print?",
+    "code": "class Parent {\n    static { System.out.print(\"A\"); }\n    { System.out.print(\"B\"); }\n    Parent() { System.out.print(\"C\"); }\n}\nclass Child extends Parent {\n    static { System.out.print(\"D\"); }\n    { System.out.print(\"E\"); }\n    Child() { System.out.print(\"F\"); }\n}",
+    "options": ["ADBCEF", "ABCDEF", "ADBECF", "DABECF"],
+    "answer": 0,
+    "explain": "Static initializers run first, parent before child. Then the parent's instance initializers and constructor, then the child's."
+  },
+  {
+    "q": "Which exception must be caught or declared?",
+    "options": ["`InterruptedException`", "`IllegalStateException`", "`ClassCastException`", "`ConcurrentModificationException`"],
+    "answer": 0,
+    "explain": "`InterruptedException` extends `Exception` directly, so it's checked. The others extend `RuntimeException`."
+  },
+  {
+    "q": "In try-with-resources, the body throws E1 and `close()` throws E2. What does the caller get?",
+    "options": ["E1, with E2 in `getSuppressed()`", "E2, with E1 as its cause", "E2 only, E1 is lost", "Both, wrapped in a new exception"],
+    "answer": 0,
+    "explain": "The primary exception from the body wins, and exceptions from closing are attached as suppressed. Old-style try/finally would lose E1 instead."
+  },
+  {
+    "q": "What does `final List<String> list = new ArrayList<>();` guarantee?",
+    "options": ["The variable can't be reassigned; the list can still change", "The list is immutable", "The list is thread-safe", "Elements can be added but not removed"],
+    "answer": 0,
+    "explain": "`final` applies to the reference, not to the object. Use `List.of(...)` or `Collections.unmodifiableList` for an unmodifiable list."
+  },
+  {
+    "q": "An object is a key in a `HashMap`. You change a field used in its `hashCode()` and call `map.get(sameObject)`. What happens most likely?",
+    "options": ["Returns null: the lookup goes to a different bucket", "Returns the value: same reference", "Throws ConcurrentModificationException", "The map rehashes itself automatically"],
+    "answer": 0,
+    "explain": "The entry stays in the bucket computed from the old hash. That's why map keys should be immutable."
+  },
+  {
+    "q": "A class implements interfaces A and B, both declaring `default void hello()`. What happens?",
+    "options": ["Compile error unless the class overrides hello()", "A's version wins: it's listed first", "B's version wins: it's listed last", "Runtime exception on calling hello()"],
+    "answer": 0,
+    "explain": "Java refuses to pick between conflicting defaults. The class must override, and may delegate via `A.super.hello()`."
+  },
+  {
+    "q": "What do these two lines print?",
+    "code": "System.out.println('a' + 1);\nSystem.out.println(\"\" + 'a' + 1);",
+    "options": ["98, then a1", "b, then a1", "a1, then a1", "98, then 98"],
+    "answer": 0,
+    "explain": "`char + int` is numeric addition ('a' is 97). Once the expression starts with a String, `+` is concatenation from left to right."
+  },
+  {
+    "q": "What happens?",
+    "code": "Map<String, Integer> m = new HashMap<>();\nint count = m.get(\"x\");",
+    "options": ["NullPointerException", "count is 0", "Compile error", "ClassCastException"],
+    "answer": 0,
+    "explain": "`get` returns `null`, and auto-unboxing `null` into `int` throws NPE. Use `getOrDefault(\"x\", 0)`."
+  },
+  {
+    "q": "What does this print?",
+    "code": "Long l = 1L;\nSystem.out.println(l.equals(1) + \" \" + (l == 1));",
+    "options": ["false true", "true true", "false false", "true false"],
+    "answer": 0,
+    "explain": "`equals(1)` boxes 1 into an `Integer`, and `Long.equals` requires a `Long`. `l == 1` unboxes `l` and compares numbers."
+  },
+  {
+    "q": "What does a `sealed` interface give you?",
+    "options": ["Only permitted classes can implement it, so a switch over them can be exhaustive", "Its methods can't be overridden", "It can't be implemented by records", "Its implementations are serializable by default"],
+    "answer": 0,
+    "explain": "`sealed ... permits X, Y` closes the hierarchy. With pattern matching for switch (Java 21), the compiler checks exhaustiveness without a `default` branch."
+  }
+]

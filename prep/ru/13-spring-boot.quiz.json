@@ -1,0 +1,146 @@
+[
+  {
+    "q": "Какие аннотации объединяет `@SpringBootApplication`?",
+    "options": ["@SpringBootConfiguration, @EnableAutoConfiguration, @ComponentScan", "@Configuration, @EnableWebMvc, @ComponentScan", "@EnableAutoConfiguration, @EnableTransactionManagement, @EnableCaching", "@Component, @Bean, @Import"],
+    "answer": 0,
+    "explain": "@SpringBootConfiguration это @Configuration, которую умеют находить тесты. Component scanning начинается с пакета аннотированного класса."
+  },
+  {
+    "q": "Как в Spring Boot 3 находятся классы автоконфигурации?",
+    "options": ["Из файлов META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports в classpath", "Сканированием всех jar на @Configuration", "Только из spring.factories", "Из application.yml"],
+    "answer": 0,
+    "explain": "Файл imports появился в Boot 2.7, а Boot 3 перестал использовать spring.factories для автоконфигурации."
+  },
+  {
+    "q": "Ты объявляешь свой бин `DataSource`. Что делает автоконфигурация DataSource в Boot?",
+    "options": ["Отступает благодаря @ConditionalOnMissingBean, используется твой", "Создаёт второй DataSource", "Старт падает из-за двух DataSource", "Перекрывает твой"],
+    "answer": 0,
+    "explain": "Пользовательская конфигурация обрабатывается раньше автоконфигурации, а большинство автоконфигурируемых бинов создаются только при отсутствии пользовательского бина того же типа."
+  },
+  {
+    "q": "Как узнать, почему автоконфигурация применилась или нет?",
+    "options": ["Запустить с --debug (отчёт об условиях) или открыть /actuator/conditions", "Читать исходники Boot", "Включить TRACE логирование для всех пакетов", "Узнать нельзя"],
+    "answer": 0,
+    "explain": "Отчёт перечисляет положительные и отрицательные совпадения с точным условием, которое прошло или не прошло."
+  },
+  {
+    "q": "`spring.datasource.url` задан в application.yml и ещё в переменной окружения. Что побеждает?",
+    "options": ["Переменная окружения", "application.yml", "Тот, что задан последним", "Старт падает из-за конфликта"],
+    "answer": 0,
+    "explain": "Переменные окружения стоят выше упакованных файлов конфигурации, а из распространённых источников выше них только аргументы командной строки. На этом держится конфигурация в стиле 12-factor."
+  },
+  {
+    "q": "Какая переменная окружения задаёт `spring.datasource.url`?",
+    "options": ["SPRING_DATASOURCE_URL", "spring.datasource.url", "SPRING-DATASOURCE-URL", "DATASOURCE_URL"],
+    "answer": 0,
+    "explain": "Relaxed binding: точки становятся подчёркиваниями, верхний регистр, дефисы убираются. Индексы списков пишутся как `_0_`, например `MY_LIST_0_NAME`."
+  },
+  {
+    "q": "Главный класс в `com.shop.app`, а `@Service` в `com.shop.billing`. Что произойдёт?",
+    "options": ["Сервис не найдётся: сканирование начинается с com.shop.app", "Найдётся: Boot сканирует весь classpath", "Найдётся, потому что @Service особенный", "Старт упадёт"],
+    "answer": 0,
+    "explain": "Положи главный класс в корневой пакет (`com.shop`) или задай `scanBasePackages`."
+  },
+  {
+    "q": "Что загружает `@WebMvcTest(OrderController.class)`?",
+    "options": ["Слой MVC (контроллеры, advice, конвертеры, фильтры), но не сервисы и репозитории", "Весь контекст приложения", "Только экземпляр контроллера, без MVC", "Контроллеры и репозитории"],
+    "answer": 0,
+    "explain": "Зависимости контроллера нужно предоставить моками (@MockitoBean). MockMvc настраивается автоматически."
+  },
+  {
+    "q": "Что по умолчанию делает `@DataJpaTest`?",
+    "options": ["Загружает компоненты JPA, делает каждый тест транзакционным с откатом и по возможности заменяет DataSource на встроенный", "Загружает полный контекст с настоящей БД", "Коммитит данные каждого теста", "Мокает все репозитории"],
+    "answer": 0,
+    "explain": "Чтобы тестировать на настоящем типе базы, используй Testcontainers и `@AutoConfigureTestDatabase(replace = NONE)` (или @ServiceConnection)."
+  },
+  {
+    "q": "Почему множество классов @SpringBootTest с разными наборами @MockitoBean замедляет тесты?",
+    "options": ["Каждой уникальной конфигурации нужен свой контекст приложения; кэш контекстов не может их переиспользовать", "Mockito медленный", "Каждый тест перезапускает JVM", "@MockitoBean отключает параллельные тесты"],
+    "answer": 0,
+    "explain": "Spring кэширует контексты по конфигурации. Унифицируй моки в общем базовом классе или предпочитай слайсы и обычные юнит-тесты."
+  },
+  {
+    "q": "Что делает `@ServiceConnection` на поле контейнера Testcontainers?",
+    "options": ["Boot сам берёт свойства подключения (URL, пользователь, пароль) из запущенного контейнера", "Запускает контейнер в отдельной JVM", "Мокает базу данных", "Регистрирует контейнер как REST-клиент"],
+    "answer": 0,
+    "explain": "Заменяет ручной код @DynamicPropertySource. Поддерживается для PostgreSQL, Kafka, Redis, MongoDB и других начиная с Boot 3.1."
+  },
+  {
+    "q": "Какие эндпоинты Actuator соответствуют пробам Kubernetes?",
+    "options": ["/actuator/health/liveness и /actuator/health/readiness", "/actuator/info и /actuator/metrics", "/actuator/env", "/actuator/startup"],
+    "answer": 0,
+    "explain": "Liveness = \"перезапусти меня, если я сломан\". Readiness = \"шли мне трафик\". Не включай внешние зависимости в liveness, иначе падение БД перезапустит все поды."
+  },
+  {
+    "q": "Как поменять уровень логгера в работающем приложении Boot?",
+    "options": ["POST на /actuator/loggers/{name} с configuredLevel", "Изменить application.yml; он перечитается сам", "Нужен перезапуск", "Через /actuator/env"],
+    "answer": 0,
+    "explain": "Удобно для временной отладки в продакшене. Эндпоинт должен быть открыт и защищён."
+  },
+  {
+    "q": "Какой встроенный сервер по умолчанию использует `spring-boot-starter-web`?",
+    "options": ["Tomcat", "Jetty", "Undertow", "Netty"],
+    "answer": 0,
+    "explain": "Исключи spring-boot-starter-tomcat и добавь стартер Jetty/Undertow, чтобы переключиться. WebFlux по умолчанию использует Reactor Netty."
+  },
+  {
+    "q": "Чем отличаются ApplicationRunner и CommandLineRunner?",
+    "options": ["ApplicationRunner получает разобранные ApplicationArguments; CommandLineRunner получает сырые String[] args", "CommandLineRunner выполняется до старта контекста", "ApplicationRunner работает только в тестах", "В приложении может быть только один из них"],
+    "answer": 0,
+    "explain": "Оба выполняются после refresh контекста, прямо перед ApplicationReadyEvent, в порядке @Order."
+  },
+  {
+    "q": "Что такое стартер Spring Boot?",
+    "options": ["Дескриптор зависимостей, который подтягивает набор библиотек (и их автоконфигурацию) совместимых версий", "Шаблон главного класса", "Плагин Maven", "Генератор кода"],
+    "answer": 0,
+    "explain": "В самих стартерах почти нет кода; автоконфигурация лежит в spring-boot-autoconfigure (или в своём модуле -autoconfigure)."
+  },
+  {
+    "q": "Что делает `server.shutdown=graceful`?",
+    "options": ["Перестаёт принимать новые запросы и даёт текущим завершиться в пределах таймаута", "Ждёт все потоки бесконечно", "Перезапускает сервер вместо остановки", "Отключает shutdown hooks"],
+    "answer": 0,
+    "explain": "Вместе с паузой preStop в Kubernetes и переходом readiness в DOWN это даёт rolling deploy без простоя. Включено по умолчанию с Boot 3.4."
+  },
+  {
+    "q": "Что в Spring Boot 3 заменило Spring Cloud Sleuth для распределённого трейсинга?",
+    "options": ["Micrometer Tracing", "Zipkin Client", "Spring Cloud Trace", "OpenTracing"],
+    "answer": 0,
+    "explain": "Micrometer Observation API с мостами Micrometer Tracing (OpenTelemetry или Brave) и экспортёрами вроде OTLP или Zipkin."
+  },
+  {
+    "q": "Какой компромисс у `spring.main.lazy-initialization=true`?",
+    "options": ["Быстрее старт, но ошибки конфигурации всплывают при первом использовании, а первые запросы медленнее", "Меньше памяти, но без AOP", "Отключает автоконфигурацию", "Компромисса нет"],
+    "answer": 0,
+    "explain": "Ранние синглтоны падают сразу при старте. Ленивая инициализация удобна в разработке; в продакшене упасть во время деплоя обычно лучше."
+  },
+  {
+    "q": "У record с `@ConfigurationProperties` есть поля `@NotNull`, а класс помечен `@Validated`. Свойство не задано. Что произойдёт?",
+    "options": ["Приложение не стартует с ошибкой валидации привязки", "Поле молча останется null", "Запишется предупреждение", "Упадёт первый запрос"],
+    "answer": 0,
+    "explain": "Упасть при старте из-за отсутствующей конфигурации именно то, что нужно."
+  },
+  {
+    "q": "Какие эндпоинты Actuator по умолчанию открыты по HTTP в Boot 3?",
+    "options": ["Только health", "Все", "health и info", "Ни одного"],
+    "answer": 0,
+    "explain": "С Boot 2.5 по вебу по умолчанию открыт только health. Открывай больше через `management.endpoints.web.exposure.include` и защищай их."
+  },
+  {
+    "q": "Как устроен fat jar Boot?",
+    "options": ["BOOT-INF/classes, BOOT-INF/lib с вложенными jar и классы лаунчера Boot", "Один плоский jar со всеми классами", "WAR с WEB-INF", "Только твои классы; зависимости скачиваются при старте"],
+    "answer": 0,
+    "explain": "Обычная Java не умеет загружать вложенные jar, поэтому JarLauncher Boot создаёт загрузчик, который умеет. Индекс слоёв затем делит его на слои Docker."
+  },
+  {
+    "q": "Как в автоконфигурации своего стартера позволить пользователям заменить твой бин `Client` по умолчанию?",
+    "options": ["Пометить свой @Bean аннотацией @ConditionalOnMissingBean", "Поставить @Primary на свой бин", "Написать в документации, что нужно исключить автоконфигурацию", "Пометить его @Lazy"],
+    "answer": 0,
+    "explain": "Пользовательская @Configuration обрабатывается первой, поэтому пользовательский бин `Client` заставит твой отступить."
+  },
+  {
+    "q": "Что даёт `spring-boot-devtools`?",
+    "options": ["Автоматический перезапуск при изменении classpath и LiveReload; выключается в упакованных продакшен-jar", "Мониторинг продакшена", "Веб-интерфейс администрирования БД", "Генерацию кода"],
+    "answer": 0,
+    "explain": "Перезапуск использует два загрузчика (библиотеки и твой код), чтобы быть быстрым. Devtools отключается сам, когда приложение запущено из полностью упакованного jar."
+  }
+]

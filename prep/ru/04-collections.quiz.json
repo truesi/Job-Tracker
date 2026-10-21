@@ -1,0 +1,151 @@
+[
+  {
+    "q": "`new HashMap<>()` с настройками по умолчанию. Когда произойдёт первый resize?",
+    "options": ["При добавлении 13-го элемента", "При добавлении 17-го элемента", "Когда в каком-то bucket наберётся 8 элементов", "Никогда: растут цепочки в bucket-ах"],
+    "answer": 0,
+    "explain": "Ёмкость 16 × load factor 0.75 = порог 12. Превышение удваивает таблицу до 32."
+  },
+  {
+    "q": "Когда bucket в HashMap превращается в красно-чёрное дерево?",
+    "options": ["При 8 элементах в bucket, если в таблице не меньше 64 bucket-ов", "При 8 элементах, всегда", "Когда load factor превышает 0.75", "При 64 элементах в bucket"],
+    "answer": 0,
+    "explain": "При меньшей таблице HashMap делает resize. Дерево защищает от множества ключей с коллизиями: поиск становится O(log n) вместо O(n)."
+  },
+  {
+    "q": "Что сделает этот код?",
+    "code": "List<String> list = Arrays.asList(\"a\", \"b\");\nlist.add(\"c\");",
+    "options": ["Бросит UnsupportedOperationException", "Добавит \"c\"", "Ошибка компиляции", "Бросит ArrayIndexOutOfBoundsException"],
+    "answer": 0,
+    "explain": "`Arrays.asList` возвращает список фиксированного размера поверх массива. `set` работает (и пишет в массив), `add`/`remove` нет."
+  },
+  {
+    "q": "Что сделает `List.of(\"a\", null)`?",
+    "options": ["Бросит NullPointerException", "Создаст список с элементом null", "Создаст список из одного элемента", "Ошибка компиляции"],
+    "answer": 0,
+    "explain": "Неизменяемые фабрики Java 9 отклоняют null-элементы; даже `contains(null)` на них бросает NPE."
+  },
+  {
+    "q": "Что произойдёт?",
+    "code": "List<String> list = new ArrayList<>(List.of(\"a\", \"b\", \"c\"));\nfor (String s : list) {\n    if (s.equals(\"a\")) list.remove(s);\n}",
+    "options": ["ConcurrentModificationException", "list станет [b, c]", "list станет [a, b, c]", "IllegalStateException"],
+    "answer": 0,
+    "explain": "Итератор for-each замечает изменение `modCount` при следующем вызове `next()`. Используй `list.removeIf(...)` или `iterator.remove()`."
+  },
+  {
+    "q": "Вопрос с подвохом. Что произойдёт?",
+    "code": "List<String> list = new ArrayList<>(List.of(\"a\", \"b\", \"c\"));\nfor (String s : list) {\n    if (s.equals(\"b\")) list.remove(s);\n}\nSystem.out.println(list);",
+    "options": ["Выведет [a, c], без исключения", "ConcurrentModificationException", "Выведет [a, b, c]", "Выведет [a]"],
+    "answer": 0,
+    "explain": "После удаления предпоследнего элемента размер становится 2, курсор тоже 2, поэтому `hasNext()` возвращает false, и цикл заканчивается до проверки. Fail-fast проверка работает только по возможности; до \"c\" дело не доходит."
+  },
+  {
+    "q": "Что выведет код?",
+    "code": "List<Integer> list = new ArrayList<>(List.of(1, 2, 3));\nlist.remove(1);\nSystem.out.println(list);",
+    "options": ["[1, 3]", "[2, 3]", "[1, 2, 3]", "Ошибка компиляции: неоднозначный вызов"],
+    "answer": 0,
+    "explain": "`remove(int index)` выбирается раньше `remove(Object)`, потому что не требует boxing. Чтобы удалить значение, используй `list.remove(Integer.valueOf(1))`."
+  },
+  {
+    "q": "Сложность `get(i)` у ArrayList и LinkedList?",
+    "options": ["O(1) и O(n)", "O(1) и O(1)", "O(n) и O(1)", "O(log n) и O(n)"],
+    "answer": 0,
+    "explain": "ArrayList обращается к массиву по индексу; LinkedList идёт по узлам с ближайшего конца."
+  },
+  {
+    "q": "Какой класс рекомендуется для стека в современной Java?",
+    "options": ["ArrayDeque", "Stack", "LinkedList", "Vector"],
+    "answer": 0,
+    "explain": "`Stack` наследует synchronized legacy-класс `Vector`. `ArrayDeque` с `push`/`pop`/`peek` быстрее, и сам javadoc `Stack` рекомендует `Deque`."
+  },
+  {
+    "q": "Ты добавляешь 5, 1, 3 в `PriorityQueue<Integer>` и печатаешь через `System.out.println(pq)`. Что гарантировано?",
+    "options": ["Только то, что 1 будет первой; остальное в порядке кучи", "[1, 3, 5]", "[5, 1, 3]", "Ничего, даже первый элемент"],
+    "answer": 0,
+    "explain": "toString и итератор обходят массив кучи. Минимум гарантирован только в голове; отсортированный порядок даёт повторный `poll()`."
+  },
+  {
+    "q": "Какой размер у множества?",
+    "code": "Set<String> set = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);\nset.add(\"a\");\nset.add(\"A\");",
+    "options": ["1", "2", "0", "Второй add бросит исключение"],
+    "answer": 0,
+    "explain": "TreeSet определяет дубликаты по компаратору, а не по `equals`. Здесь \"a\" и \"A\" сравниваются как 0, поэтому второй add игнорируется."
+  },
+  {
+    "q": "Какая из этих map принимает `null` ключ?",
+    "options": ["HashMap", "TreeMap с естественным порядком", "ConcurrentHashMap", "Map.of(...)"],
+    "answer": 0,
+    "explain": "HashMap хранит один null-ключ в bucket 0. TreeMap вызвал бы `compareTo` на null; CHM и неизменяемые map отклоняют null намеренно."
+  },
+  {
+    "q": "Как превратить LinkedHashMap в LRU-кэш?",
+    "options": ["Создать с accessOrder = true и переопределить removeEldestEntry", "Выставить load factor 1.0", "Обернуть в Collections.synchronizedMap", "Вызывать trimToSize() после каждого put"],
+    "answer": 0,
+    "explain": "Порядок доступа переносит запись в конец при каждом get. `removeEldestEntry` вызывается после каждого put и может вытеснить голову."
+  },
+  {
+    "q": "Ты оборачиваешь список через `Collections.unmodifiableList(original)`, а потом добавляешь элемент в `original`. Что покажет обёртка?",
+    "options": ["Новый элемент: это view", "Старое содержимое: это копия", "Бросит ConcurrentModificationException", "Бросит UnsupportedOperationException"],
+    "answer": 0,
+    "explain": "Это только view для чтения. Для настоящего снимка используй `List.copyOf(original)`."
+  },
+  {
+    "q": "Что сделает `Map.of(\"a\", 1, \"a\", 2)`?",
+    "options": ["Бросит IllegalArgumentException", "Оставит a=2", "Оставит a=1", "Ошибка компиляции"],
+    "answer": 0,
+    "explain": "Неизменяемые фабрики отклоняют дубликаты ключей (и дубликаты элементов в `Set.of`) при создании."
+  },
+  {
+    "q": "Как устроен HashSet?",
+    "options": ["Поверх HashMap, где значения это общий фиктивный объект", "Своя хеш-таблица с открытой адресацией", "Поверх TreeMap", "Отсортированный массив"],
+    "answer": 0,
+    "explain": "Каждый элемент это ключ во внутреннем HashMap, а значение константный объект `PRESENT`."
+  },
+  {
+    "q": "Несколько потоков одновременно делают `put` в обычную HashMap. Что может случиться?",
+    "options": ["Потерянные записи и испорченное состояние", "Ничего: put атомарен", "ConcurrentModificationException при каждом конфликте", "Автоматический переход в synchronized режим"],
+    "answer": 0,
+    "explain": "В HashMap нет синхронизации. Используй ConcurrentHashMap; в Java 7 конкурентный resize мог даже создать цикл и бесконечный цикл в `get`."
+  },
+  {
+    "q": "Почему EnumMap быстрее HashMap для enum-ключей?",
+    "options": ["Это массив по ordinal(): ни хеширования, ни коллизий", "Он кэширует hashCode enum-ов", "Он synchronized", "Он хранит ключи в дереве"],
+    "answer": 0,
+    "explain": "У enum фиксированный набор констант с порядковыми номерами, поэтому подходит обычный массив. EnumSet аналогично является битовым вектором."
+  },
+  {
+    "q": "Стабилен ли порядок итерации HashMap?",
+    "options": ["Нет: он не определён и может поменяться после resize", "Да: порядок вставки", "Да: по ключу", "Да: по hashCode"],
+    "answer": 0,
+    "explain": "Порядок зависит от позиций bucket-ов, которые меняются при росте таблицы. Если порядок важен, используй LinkedHashMap или TreeMap."
+  },
+  {
+    "q": "Какой алгоритм использует `List.sort` для объектов, и стабилен ли он?",
+    "options": ["TimSort, стабильный", "Dual-pivot quicksort, нестабильный", "Heap sort, нестабильный", "Merge sort, нестабильный"],
+    "answer": 0,
+    "explain": "Стабильность важна при последовательной сортировке по нескольким ключам. Dual-pivot quicksort используется в `Arrays.sort` для примитивов, где стабильность не имеет смысла."
+  },
+  {
+    "q": "Для чего обычно используют WeakHashMap?",
+    "options": ["Метаданные, привязанные к объектам, которые удаляются автоматически, когда ключ больше нигде не нужен", "Потокобезопасный кэш", "Map со слабым (приблизительным) равенством", "Map, которая может быть больше памяти"],
+    "answer": 0,
+    "explain": "Ключи хранятся по слабым ссылкам. Осторожно: если значение ссылается на ключ, запись никогда не исчезнет."
+  },
+  {
+    "q": "Что возвращает `list.reversed()` в Java 21?",
+    "options": ["View в обратном порядке поверх исходного списка", "Перевёрнутую копию", "Ничего: переворачивает на месте", "Неизменяемый перевёрнутый список"],
+    "answer": 0,
+    "explain": "Sequenced collections (JEP 431) добавили `reversed()` как view. Запись через view меняет исходный список."
+  },
+  {
+    "q": "Что возвращает `treeMap.floorKey(k)`?",
+    "options": ["Наибольший ключ ≤ k, или null", "Наименьший ключ ≥ k", "Наибольший ключ < k", "Первый ключ map"],
+    "answer": 0,
+    "explain": "floor ≤, ceiling ≥, lower <, higher >. Удобно для диапазонов вроде ценовых уровней или \"значение на момент t\"."
+  },
+  {
+    "q": "Сложность `contains` у ArrayList, HashSet и TreeSet?",
+    "options": ["O(n), O(1) в среднем, O(log n)", "O(1), O(1), O(1)", "O(n), O(log n), O(1)", "O(log n), O(1), O(n)"],
+    "answer": 0,
+    "explain": "ArrayList сканирует линейно. HashSet идёт в bucket по хешу (в худшем случае O(log n) с деревьями в bucket-ах). TreeSet идёт по сбалансированному дереву."
+  }
+]

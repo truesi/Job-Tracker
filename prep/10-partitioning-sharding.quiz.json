@@ -1,0 +1,140 @@
+[
+  {
+    "q": "What is partition pruning?",
+    "options": ["The planner skips partitions that can't contain rows matching the query", "Deleting old partitions automatically", "Compressing unused partitions", "Merging small partitions"],
+    "answer": 0,
+    "explain": "It only works when the query filters on the partition key with values the planner (or the executor, for parameters) can compare against partition bounds."
+  },
+  {
+    "q": "A `payments` table is range-partitioned by month. How do you remove data older than 2 years most efficiently?",
+    "options": ["DETACH and DROP the old partitions", "DELETE FROM payments WHERE created_at < ...", "TRUNCATE the whole table", "VACUUM FULL"],
+    "answer": 0,
+    "explain": "Dropping a partition is a metadata operation: instant, no dead rows, no long transaction. A big DELETE creates millions of dead tuples and WAL."
+  },
+  {
+    "q": "In PostgreSQL, what's required for a primary key on a partitioned table?",
+    "options": ["It must include the partition key columns", "It must be a UUID", "Partitioned tables can't have primary keys", "It must be the partition key alone"],
+    "answer": 0,
+    "explain": "Uniqueness is enforced per partition, so global uniqueness is only guaranteed if the partition key is part of the key."
+  },
+  {
+    "q": "An `events` table is partitioned by `created_at`. What happens to `SELECT * FROM events WHERE user_id = 42`?",
+    "options": ["It scans every partition", "It reads only the newest partition", "It fails: the partition key is required", "It uses a global index across partitions"],
+    "answer": 0,
+    "explain": "With no condition on created_at, nothing can be pruned. PostgreSQL has no global indexes, so each partition's index on user_id is searched."
+  },
+  {
+    "q": "What's the main risk of asynchronous replication?",
+    "options": ["On failover, transactions committed on the leader but not yet replicated are lost; replicas can serve stale data", "Writes become slower", "Replicas can't be used for reads", "The leader can't accept writes when a replica is down"],
+    "answer": 0,
+    "explain": "The commit returns before replicas confirm. That's the price of low latency; synchronous replication avoids the loss but slows every commit."
+  },
+  {
+    "q": "A user updates their profile, refreshes the page, and sees the old data. Reads go to a replica. What's this?",
+    "options": ["Replication lag breaking read-your-writes consistency", "A dirty read", "A lost update", "A cache stampede"],
+    "answer": 0,
+    "explain": "Fixes: read the user's own data from the leader for a short time after a write, route the session to one node, or wait for the replica to catch up to the write's position."
+  },
+  {
+    "q": "What do read replicas scale?",
+    "options": ["Read throughput, not write throughput", "Writes and reads equally", "Only writes", "Storage capacity per row"],
+    "answer": 0,
+    "explain": "Every replica still applies every write. Scaling writes means sharding (or batching, or a bigger leader)."
+  },
+  {
+    "q": "How does sharding differ from partitioning?",
+    "options": ["Sharding spreads data across separate database servers; partitioning splits a table within one database", "They're the same thing", "Partitioning is across servers; sharding is within one", "Sharding is only for NoSQL databases"],
+    "answer": 0,
+    "explain": "The terms get mixed (Cassandra and Kafka call their shards partitions), but in relational interviews this is the usual distinction."
+  },
+  {
+    "q": "Orders are range-sharded by `created_at`. What's the problem?",
+    "options": ["All new writes go to the last shard: a hot shard", "Range queries become impossible", "IDs collide across shards", "Nothing; it's ideal"],
+    "answer": 0,
+    "explain": "A monotonically increasing key concentrates the write load. Hashing the key, or sharding by tenant/user, spreads it."
+  },
+  {
+    "q": "What's the main downside of hash-based sharding?",
+    "options": ["Range queries on the key must hit all shards", "Data is unevenly distributed", "Adding a shard is free", "Point lookups are slow"],
+    "answer": 0,
+    "explain": "Hashing destroys ordering. Point lookups by key are fast; \"all orders from last week\" becomes scatter-gather."
+  },
+  {
+    "q": "What's the advantage of consistent hashing?",
+    "options": ["Adding or removing a node moves only about 1/N of the keys", "It guarantees perfectly even load without virtual nodes", "It removes the need for replication", "It keeps keys sorted"],
+    "answer": 0,
+    "explain": "Each node owns arcs of a hash ring. A new node takes over parts of its neighbors' arcs; everything else stays where it was."
+  },
+  {
+    "q": "Why is `shard = hash(key) % N` a problem when you add a shard?",
+    "options": ["Changing N remaps almost every key to a different shard", "The modulo operation is too slow", "Hash values can be negative", "It only works for numeric keys"],
+    "answer": 0,
+    "explain": "Going from 4 to 5 shards moves about 80% of keys. Consistent hashing, or a fixed large number of logical shards mapped to physical nodes, avoids it."
+  },
+  {
+    "q": "One celebrity account gets 1000× more traffic than others and overloads its shard. What helps?",
+    "options": ["Splitting the hot key (e.g. adding a suffix to spread it) and caching its reads", "Adding more shards", "Switching to range sharding", "Using a longer shard key"],
+    "answer": 0,
+    "explain": "More shards don't help a single key. Write splitting (key#1..key#10, merged on read) and aggressive caching do."
+  },
+  {
+    "q": "How do you avoid cross-shard joins between customers and their orders?",
+    "options": ["Shard both by customer_id so a customer's data lives on one shard", "Use a global secondary index", "Join in the application with N queries", "Shard orders by order_id"],
+    "answer": 0,
+    "explain": "Co-location by a shared shard key keeps the common queries single-shard. Citus calls these co-located distributed tables."
+  },
+  {
+    "q": "How do you generate unique IDs across many shards?",
+    "options": ["Snowflake-style IDs (timestamp + node + sequence) or UUIDv7", "Each shard's own auto-increment", "A random 32-bit integer", "SELECT MAX(id) + 1"],
+    "answer": 0,
+    "explain": "Per-shard sequences collide. Snowflake IDs are 64-bit, roughly time-ordered and generated without coordination."
+  },
+  {
+    "q": "According to CAP, what must a distributed database choose during a network partition?",
+    "options": ["Between consistency and availability", "Between consistency and partition tolerance", "Between latency and throughput", "Nothing: modern databases avoid the trade-off"],
+    "answer": 0,
+    "explain": "Partitions happen, so P isn't optional. A CP system refuses some requests; an AP system answers with possibly stale data."
+  },
+  {
+    "q": "In a leaderless store with N=3 replicas, which setting guarantees that reads see the latest acknowledged write?",
+    "options": ["W=2, R=2", "W=1, R=1", "W=1, R=2", "W=3, R=0"],
+    "answer": 0,
+    "explain": "W + R > N means every read quorum overlaps every write quorum. In practice edge cases (sloppy quorums, concurrent writes) still weaken this."
+  },
+  {
+    "q": "What is vertical partitioning?",
+    "options": ["Splitting tables or columns into separate tables or databases, e.g. by domain", "Splitting rows by key range", "Adding more CPU to the server", "Replicating to more followers"],
+    "answer": 0,
+    "explain": "Moving rarely used wide columns to a side table, or each microservice owning its own database, are both vertical splits."
+  },
+  {
+    "q": "A PostgreSQL database is getting slow under load. What should you try before sharding?",
+    "options": ["Indexes and query fixes, caching, read replicas, partitioning, a bigger machine", "Sharding is always the first step", "Switching to a NoSQL database", "Disabling WAL"],
+    "answer": 0,
+    "explain": "Sharding adds permanent complexity. A single modern server handles a lot; many companies run very large PostgreSQL instances before needing shards."
+  },
+  {
+    "q": "What is Citus?",
+    "options": ["A PostgreSQL extension that distributes tables across nodes (sharding)", "A MySQL sharding proxy", "A connection pooler", "A backup tool"],
+    "answer": 0,
+    "explain": "Citus shards tables by a distribution column and routes or parallelizes queries. Vitess is the equivalent for MySQL (born at YouTube)."
+  },
+  {
+    "q": "Physical vs logical replication in PostgreSQL?",
+    "options": ["Physical streams WAL for the whole cluster (exact copy); logical replicates row changes for selected tables", "Physical replicates SQL statements; logical replicates files", "They're two names for the same thing", "Logical is only for backups"],
+    "answer": 0,
+    "explain": "Physical replicas are read-only clones of the same major version. Logical replication works across versions (useful for upgrades) and lets you pick tables."
+  },
+  {
+    "q": "What's the cost of synchronous replication?",
+    "options": ["Higher commit latency, and writes stall if the synchronous replica is unavailable", "Possible data loss on failover", "Replicas can't serve reads", "It doubles storage on the leader"],
+    "answer": 0,
+    "explain": "Each commit waits for the replica's confirmation. Setups usually list several candidates (`ANY 1 (r1, r2)`) so one replica outage doesn't stop writes."
+  },
+  {
+    "q": "PACELC extends CAP. What does the \"ELC\" part say?",
+    "options": ["Else (no partition), choose between latency and consistency", "Every leader can commit", "Eventual linearizable consistency", "Errors lead to compensation"],
+    "answer": 0,
+    "explain": "Even without failures, waiting for replicas to agree costs latency. DynamoDB-style systems choose latency; Spanner-style choose consistency."
+  }
+]

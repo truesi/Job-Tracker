@@ -1,0 +1,153 @@
+[
+  {
+    "q": "Transaction A reads a row that transaction B has modified but not committed. B then rolls back. What anomaly is this?",
+    "options": ["Dirty read", "Phantom read", "Non-repeatable read", "Write skew"],
+    "answer": 0,
+    "explain": "A has seen data that never officially existed. Every level from READ COMMITTED up prevents it, and PostgreSQL never allows it."
+  },
+  {
+    "q": "What's the default isolation level in PostgreSQL?",
+    "options": ["READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE", "READ UNCOMMITTED"],
+    "answer": 0,
+    "explain": "Each statement sees data committed before it started. Spring's `Isolation.DEFAULT` means \"whatever the database default is\"."
+  },
+  {
+    "q": "What's the default isolation level in MySQL InnoDB?",
+    "options": ["REPEATABLE READ", "READ COMMITTED", "SERIALIZABLE", "READ UNCOMMITTED"],
+    "answer": 0,
+    "explain": "InnoDB's REPEATABLE READ uses one snapshot per transaction for plain reads, and next-key locks for locking reads and writes."
+  },
+  {
+    "q": "Two transactions both read balance = 100, each add 10 in Java and write 110. Final balance is 110. What happened, and what's a simple fix?",
+    "options": ["Lost update; use UPDATE ... SET balance = balance + 10, or a lock / version check", "Dirty read; use READ COMMITTED", "Phantom read; add an index", "Nothing wrong; it's the expected result"],
+    "answer": 0,
+    "explain": "Read-modify-write in the application loses one update under READ COMMITTED. An atomic UPDATE, SELECT ... FOR UPDATE, or optimistic locking with a version column prevents it."
+  },
+  {
+    "q": "Rule: at least one doctor must be on call. Two on-call doctors simultaneously check \"another doctor is on call\" and each takes themselves off. Which PostgreSQL level prevents this?",
+    "options": ["SERIALIZABLE", "REPEATABLE READ", "READ COMMITTED", "None of them"],
+    "answer": 0,
+    "explain": "This is write skew: each updates a different row, so snapshot isolation sees no conflict. PostgreSQL's SSI detects the dangerous pattern and aborts one; alternatively lock the rows you read with FOR UPDATE."
+  },
+  {
+    "q": "PostgreSQL, REPEATABLE READ: transaction B updates a row that A has updated and committed after B's snapshot. What happens to B?",
+    "options": ["ERROR: could not serialize access due to concurrent update", "B overwrites A's change", "B waits forever", "B silently re-reads and applies its change"],
+    "answer": 0,
+    "explain": "B would be modifying a version it can't see, so PostgreSQL aborts it. Under READ COMMITTED, B would wait, then re-check its WHERE against the new version and proceed."
+  },
+  {
+    "q": "A transaction fails with SQLSTATE 40001 (serialization_failure). What should the application do?",
+    "options": ["Retry the whole transaction from the beginning", "Retry only the failed statement", "Lower the isolation level permanently", "Ignore it; the data was saved"],
+    "answer": 0,
+    "explain": "The transaction's decisions were based on a snapshot that's no longer valid, so all of it must rerun. Spring Retry or a simple loop around the @Transactional call works."
+  },
+  {
+    "q": "What is the main benefit of MVCC?",
+    "options": ["Readers don't block writers and writers don't block readers", "No locks are ever needed", "Transactions never abort", "It uses less disk space"],
+    "answer": 0,
+    "explain": "Each reader sees a consistent snapshot of row versions. Two writers to the same row still conflict."
+  },
+  {
+    "q": "Under READ COMMITTED in PostgreSQL, what does each statement see?",
+    "options": ["Data committed before that statement started", "Data committed before the transaction started", "Uncommitted data of other transactions", "Only its own transaction's writes"],
+    "answer": 0,
+    "explain": "A new snapshot per statement, so two SELECTs in one transaction can see different data. REPEATABLE READ keeps the first snapshot."
+  },
+  {
+    "q": "Several workers poll a `jobs` table. How do they each grab different pending jobs without blocking each other?",
+    "options": ["SELECT ... FOR UPDATE SKIP LOCKED LIMIT n", "SELECT ... FOR UPDATE NOWAIT", "SERIALIZABLE isolation", "LOCK TABLE jobs"],
+    "answer": 0,
+    "explain": "Rows locked by another worker are skipped instead of waited for. That's how many PostgreSQL-backed job queues work."
+  },
+  {
+    "q": "Two transactions are deadlocked. What does PostgreSQL do?",
+    "options": ["Detects the cycle and aborts one transaction with an error", "Waits until lock_timeout for both", "Kills both connections", "Nothing: the application must detect it"],
+    "answer": 0,
+    "explain": "After `deadlock_timeout` (1 s) it runs detection and aborts a victim. Prevent deadlocks by locking rows in a consistent order (for example by id), and retry on error."
+  },
+  {
+    "q": "How does optimistic locking detect a conflict?",
+    "options": ["UPDATE ... WHERE id = ? AND version = ? affects 0 rows", "SELECT FOR UPDATE times out", "The database raises a deadlock", "A trigger compares timestamps"],
+    "answer": 0,
+    "explain": "Each update increments the version. If someone else got there first, the expected version no longer matches. JPA throws OptimisticLockException."
+  },
+  {
+    "q": "What does Spring throw when a JPA `@Version` conflict happens?",
+    "options": ["ObjectOptimisticLockingFailureException", "DataIntegrityViolationException", "DeadlockLoserDataAccessException", "TransactionTimedOutException"],
+    "answer": 0,
+    "explain": "It wraps JPA's OptimisticLockException in Spring's OptimisticLockingFailureException hierarchy. Typical handling: retry, or return HTTP 409 Conflict."
+  },
+  {
+    "q": "A `@Transactional` method is called from another method of the same class. What happens?",
+    "code": "public void importAll() {\n    for (Row r : rows) saveRow(r);   // plain call\n}\n\n@Transactional\npublic void saveRow(Row r) { ... }",
+    "options": ["No transaction is started: the call doesn't go through the proxy", "A transaction per saveRow call", "One transaction for importAll", "Compile error"],
+    "answer": 0,
+    "explain": "Spring AOP proxies intercept only calls coming from outside the bean. Move the method to another bean, or use TransactionTemplate."
+  },
+  {
+    "q": "A `@Transactional` method throws a checked `IOException`. By default, what happens?",
+    "options": ["The transaction commits", "The transaction rolls back", "Spring wraps it and rolls back", "Spring retries once"],
+    "answer": 0,
+    "explain": "Default rollback is only for RuntimeException and Error (an EJB legacy). Use `@Transactional(rollbackFor = Exception.class)` to change it."
+  },
+  {
+    "q": "When does `Propagation.REQUIRES_NEW` make sense?",
+    "options": ["Writing an audit record that must be kept even if the outer transaction rolls back", "Making every repository call faster", "Joining the caller's transaction", "Avoiding the need for a database connection"],
+    "answer": 0,
+    "explain": "The outer transaction is suspended and a separate one commits on its own connection. Watch out: it needs a second pooled connection, so nesting it under load can exhaust the pool."
+  },
+  {
+    "q": "How is `Propagation.NESTED` implemented with JDBC?",
+    "options": ["A savepoint inside the same physical transaction", "A new connection and transaction", "Two-phase commit", "It's identical to REQUIRED"],
+    "answer": 0,
+    "explain": "Rolling back the nested part rolls back to the savepoint; the outer transaction can continue. With JPA, rolling back to a savepoint doesn't undo changes to entities already in the persistence context, so NESTED fits plain JDBC best."
+  },
+  {
+    "q": "\"UnexpectedRollbackException: Transaction silently rolled back because it has been marked as rollback-only.\" What's the usual cause?",
+    "options": ["An inner REQUIRED @Transactional method threw a RuntimeException, and the outer method caught it and continued", "The database ran out of space", "readOnly = true was set", "Two transaction managers are configured"],
+    "answer": 0,
+    "explain": "The inner failure marks the shared transaction rollback-only. Catching the exception doesn't undo that, so the outer commit fails."
+  },
+  {
+    "q": "How does a database guarantee durability of a committed transaction?",
+    "options": ["The write-ahead log is flushed to disk before COMMIT returns", "Data pages are written synchronously on every UPDATE", "Replicas acknowledge every write", "It keeps all data in memory"],
+    "answer": 0,
+    "explain": "After a crash the WAL is replayed. Data pages are written lazily (checkpoints). `synchronous_commit = off` trades a small window of loss for speed."
+  },
+  {
+    "q": "A session sits \"idle in transaction\" for hours in PostgreSQL. Why is that harmful?",
+    "options": ["VACUUM can't remove dead row versions newer than its snapshot (bloat), and it may hold locks", "It uses a lot of CPU", "It blocks all SELECT queries", "It's harmless"],
+    "answer": 0,
+    "explain": "Tables and indexes bloat and queries slow down. Set `idle_in_transaction_session_timeout` and keep transactions short."
+  },
+  {
+    "q": "A transaction counts orders with `status = 'NEW'` twice and gets 5, then 6, because another transaction inserted a row and committed. What's this?",
+    "options": ["Phantom read", "Dirty read", "Lost update", "Deadlock"],
+    "answer": 0,
+    "explain": "New rows matching a predicate appear. In PostgreSQL REPEATABLE READ prevents it (stricter than the standard requires)."
+  },
+  {
+    "q": "How do you decrement stock safely without explicit locks or version columns?",
+    "options": ["UPDATE stock SET qty = qty - 1 WHERE id = ? AND qty > 0, then check the affected row count", "SELECT qty, then UPDATE with the computed value", "Use READ UNCOMMITTED", "Use a Java synchronized block"],
+    "answer": 0,
+    "explain": "The check and the change happen in one atomic statement under the row lock. 0 rows means out of stock. A JVM lock doesn't help with multiple instances."
+  },
+  {
+    "q": "What's the main drawback of two-phase commit (XA)?",
+    "options": ["It's blocking: if the coordinator fails after prepare, participants hold locks until it recovers", "It can't guarantee atomicity", "It works only within one database", "It requires eventual consistency"],
+    "answer": 0,
+    "explain": "Prepared participants can't decide alone. Plus latency and the operational cost of XA drivers; sagas or the outbox pattern are usually preferred in microservices."
+  },
+  {
+    "q": "Which problem does the transactional outbox pattern solve?",
+    "options": ["Dual writes: committing a DB change and publishing an event atomically", "Slow SQL queries", "Deadlocks between services", "Exactly-once delivery without idempotency"],
+    "answer": 0,
+    "explain": "Writing to the DB and then to Kafka can fail in between. With an outbox table in the same transaction, the event is published later by a relay, at least once."
+  },
+  {
+    "q": "With Spring + Hibernate, what does `@Transactional(readOnly = true)` do?",
+    "options": ["Hibernate skips dirty checking and flushing; the JDBC connection is marked read-only", "It caches query results", "It sets the isolation level to SERIALIZABLE", "Nothing: it's only documentation"],
+    "answer": 0,
+    "explain": "It saves the cost of snapshotting entities for dirty checking. With PostgreSQL the transaction becomes READ ONLY, so writes fail, and a routing DataSource can send it to a replica."
+  }
+]

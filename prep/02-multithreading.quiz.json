@@ -1,0 +1,137 @@
+[
+  {
+    "q": "What does this print?",
+    "code": "Thread t = new Thread(() ->\n    System.out.println(Thread.currentThread().getName()));\nt.run();",
+    "options": ["main", "Thread-0", "Nothing", "IllegalThreadStateException"],
+    "answer": 0,
+    "explain": "`run()` is an ordinary method call in the current thread. Only `start()` creates a new thread."
+  },
+  {
+    "q": "What happens when you call `start()` twice on the same Thread object?",
+    "options": ["IllegalThreadStateException on the second call", "The thread runs twice", "The second call is ignored", "The thread restarts from the beginning"],
+    "answer": 0,
+    "explain": "A thread can be started only once. To run the task again, create a new Thread or submit it to an executor."
+  },
+  {
+    "q": "Two threads each run `count++` 1000 times on a `volatile int count`. What is the final value?",
+    "options": ["Not guaranteed to be 2000", "Always 2000: volatile makes it atomic", "Always 1000", "It throws an exception on conflict"],
+    "answer": 0,
+    "explain": "`++` is read, add, write. `volatile` gives visibility but not atomicity, so updates get lost. Use `AtomicInteger` or synchronization."
+  },
+  {
+    "q": "Thread 1 calls a `static synchronized` method of class C, thread 2 calls an instance `synchronized` method of a C object. Do they block each other?",
+    "options": ["No: they lock different monitors", "Yes: same class, same lock", "Only if it's the same method", "Yes, when the JVM uses biased locking"],
+    "answer": 0,
+    "explain": "Static synchronized methods lock `C.class`; instance methods lock `this`. Different objects mean independent locks."
+  },
+  {
+    "q": "What happens if you call `obj.wait()` without holding `obj`'s monitor?",
+    "options": ["IllegalMonitorStateException", "The thread waits normally", "Compile error", "It returns immediately"],
+    "answer": 0,
+    "explain": "`wait`, `notify` and `notifyAll` must be called inside `synchronized (obj)`. The check happens at runtime."
+  },
+  {
+    "q": "Why should `wait()` always be called in a loop that checks the condition?",
+    "options": ["Spurious wakeups, and the condition can change before the lock is reacquired", "wait() returns immediately the first time", "Without a loop notify() is lost", "The JMM requires a loop for visibility"],
+    "answer": 0,
+    "explain": "A woken thread competes for the lock again; by the time it gets it, another thread may have consumed the state. Spurious wakeups are allowed by the spec too."
+  },
+  {
+    "q": "What is the difference between `Thread.sleep()` and `Object.wait()` regarding locks?",
+    "options": ["sleep keeps held monitors, wait releases the monitor", "Both release all locks", "Neither releases locks", "sleep releases the monitor, wait keeps it"],
+    "answer": 0,
+    "explain": "Sleeping inside `synchronized` keeps other threads blocked. `wait()` releases that object's monitor until it's notified."
+  },
+  {
+    "q": "A thread is trying to enter a `synchronized` block that another thread holds. What is its state?",
+    "options": ["BLOCKED", "WAITING", "TIMED_WAITING", "RUNNABLE"],
+    "answer": 0,
+    "explain": "BLOCKED is specifically waiting for a monitor. Waiting on `ReentrantLock.lock()` shows as WAITING, because it parks via `LockSupport`."
+  },
+  {
+    "q": "A thread calls `otherThread.join()` with no timeout. What is its state?",
+    "options": ["WAITING", "BLOCKED", "TIMED_WAITING", "TERMINATED"],
+    "answer": 0,
+    "explain": "`join()` without a timeout waits indefinitely, which is WAITING. `join(1000)` would be TIMED_WAITING."
+  },
+  {
+    "q": "What is the right way to handle `InterruptedException` when you can't rethrow it?",
+    "options": ["Call `Thread.currentThread().interrupt()` to restore the flag", "Log it and continue", "Ignore it: it's harmless", "Call `System.exit()`"],
+    "answer": 0,
+    "explain": "Throwing InterruptedException clears the interrupt flag. Restoring it lets the code higher up the stack see the cancellation request."
+  },
+  {
+    "q": "A thread runs a tight CPU loop that never checks the interrupt flag. Another thread calls `interrupt()` on it. What happens?",
+    "options": ["Nothing visible: only the flag is set", "The thread stops immediately", "InterruptedException is thrown inside the loop", "The thread is killed after a timeout"],
+    "answer": 0,
+    "explain": "Interruption is cooperative. Only blocking methods react by throwing; plain code has to check `isInterrupted()` itself."
+  },
+  {
+    "q": "Thread A runs the loop, and later thread B sets `running = false`. What can happen?",
+    "code": "static boolean running = true;\n\n// thread A\nwhile (running) { }\n\n// thread B\nrunning = false;",
+    "options": ["Thread A may never stop", "Thread A stops within a few milliseconds", "Compile error", "ConcurrentModificationException"],
+    "answer": 0,
+    "explain": "Without `volatile` there's no happens-before, and the JIT may hoist the read out of the loop. Mark the field `volatile`."
+  },
+  {
+    "q": "Why must the instance field be `volatile` in double-checked locking?",
+    "options": ["Otherwise a thread may see a non-null reference to a partially constructed object", "To make the constructor synchronized", "To prevent creating two instances in the synchronized block", "To make the field static"],
+    "answer": 0,
+    "explain": "Writing the reference can be reordered before the constructor's field writes. A volatile write orders them and publishes the object safely."
+  },
+  {
+    "q": "Which of these does NOT create a happens-before relationship between two threads?",
+    "options": ["Writing a plain field, then reading it in another thread after `Thread.sleep(1000)`", "`Thread.start()` and actions in the started thread", "A volatile write and a later read of the same variable", "Unlock and a later lock of the same monitor"],
+    "answer": 0,
+    "explain": "`sleep` has no synchronization semantics. Timing is not ordering: the other thread may still see a stale value."
+  },
+  {
+    "q": "Two threads lock A then B and B then A. What's the standard fix for this deadlock?",
+    "options": ["Acquire locks in one global order", "Make both locks volatile", "Add Thread.sleep between the locks", "Raise the priority of one thread"],
+    "answer": 0,
+    "explain": "A consistent order breaks the circular-wait condition. Alternatively use `tryLock` with a timeout and back off."
+  },
+  {
+    "q": "What happens to daemon threads when the last non-daemon thread finishes?",
+    "options": ["The JVM exits; their finally blocks may not run", "The JVM waits for them to finish", "They become non-daemon", "They are interrupted and the JVM waits for them"],
+    "answer": 0,
+    "explain": "Daemon threads are abandoned at exit. Don't use them for work that must complete, such as writing files."
+  },
+  {
+    "q": "Which writes may be non-atomic according to the JLS?",
+    "options": ["Non-volatile `long` and `double`", "Non-volatile `int` and `boolean`", "Object references", "Volatile `long` and `double`"],
+    "answer": 0,
+    "explain": "JLS 17.7 allows a non-volatile 64-bit write to be split into two 32-bit halves, so a reader could see a torn value. Volatile long/double are atomic."
+  },
+  {
+    "q": "What's the risk of using `ThreadLocal` in code running on a thread pool?",
+    "options": ["Values leak into the next task on the same thread unless removed", "ThreadLocal doesn't work with pools", "Values are shared between all pool threads", "Every task gets a fresh value automatically"],
+    "answer": 0,
+    "explain": "Pool threads live long, so a ThreadLocal value survives the task. Call `remove()` in `finally`, otherwise you get stale data and memory leaks."
+  },
+  {
+    "q": "In JDK 21, when is a virtual thread pinned to its carrier thread?",
+    "options": ["When it blocks inside a synchronized block or a native call", "Whenever it does blocking I/O", "Always: virtual threads never unmount", "Only when it calls Thread.sleep"],
+    "answer": 0,
+    "explain": "Pinned virtual threads block their carrier. JDK 24 (JEP 491) removed pinning for `synchronized`; native frames still pin."
+  },
+  {
+    "q": "How should you limit concurrent DB calls when every request runs on a virtual thread?",
+    "options": ["A Semaphore (or the connection pool size)", "A fixed-size pool of virtual threads", "Thread priorities", "Running DB calls with synchronized"],
+    "answer": 0,
+    "explain": "Virtual threads are cheap and shouldn't be pooled. Limit the scarce resource, not the threads."
+  },
+  {
+    "q": "What does calling `a()` print?",
+    "code": "synchronized void a() { b(); }\nsynchronized void b() { System.out.println(\"b\"); }",
+    "options": ["b", "Deadlock: the thread waits for itself", "IllegalMonitorStateException", "Compile error"],
+    "answer": 0,
+    "explain": "Intrinsic locks are reentrant. The thread already holds the monitor of `this` and just increments the hold count."
+  },
+  {
+    "q": "What does the JMM guarantee about `final` fields?",
+    "options": ["Other threads see the values set in the constructor, if `this` doesn't escape", "Final fields are always cached in CPU registers", "Final fields make the object thread-safe even if mutable objects are inside", "Nothing beyond normal fields"],
+    "answer": 0,
+    "explain": "Final field semantics allow safe sharing of immutable objects without synchronization. The referenced objects themselves still need to be immutable or safely published."
+  }
+]

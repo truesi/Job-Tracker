@@ -1,0 +1,146 @@
+[
+  {
+    "q": "Since Java 8, where is class metadata stored?",
+    "options": ["Metaspace, in native memory", "PermGen, inside the heap", "The old generation", "The code cache"],
+    "answer": 0,
+    "explain": "PermGen was removed in Java 8. Metaspace grows in native memory and is unbounded by default, so set `MaxMetaspaceSize` if class generation could leak."
+  },
+  {
+    "q": "What is the most common cause of `StackOverflowError`?",
+    "options": ["Unbounded or too deep recursion", "Too many objects on the heap", "Too many threads", "Too many loaded classes"],
+    "answer": 0,
+    "explain": "Each call adds a frame to the thread's stack (size set by `-Xss`). Typical culprits: missing base cases, cyclic `toString`/`equals`, bidirectional JPA entities serialized to JSON."
+  },
+  {
+    "q": "Which of these is NOT a GC root?",
+    "options": ["An object referenced only from another unreachable object", "A local variable in an active stack frame", "A static field of a loaded class", "A JNI global reference"],
+    "answer": 0,
+    "explain": "Being referenced isn't enough: the referencing object must itself be reachable from a root."
+  },
+  {
+    "q": "Objects A and B reference each other, and nothing else references either. What happens at the next full GC?",
+    "options": ["Both are collected", "Neither is collected: they keep each other alive", "Only the older one is collected", "It's a memory leak until the JVM restarts"],
+    "answer": 0,
+    "explain": "Java GCs trace reachability from roots. Cycles are a problem only for reference counting, which the JVM doesn't use."
+  },
+  {
+    "q": "What is the generational hypothesis?",
+    "options": ["Most objects die young", "Old objects reference young ones more often than the reverse", "Objects are accessed in creation order", "Large objects live longer"],
+    "answer": 0,
+    "explain": "So the young generation is collected often with cheap copying, and only survivors pay for promotion."
+  },
+  {
+    "q": "Which GC is the default since Java 9 (on server-class machines)?",
+    "options": ["G1", "Parallel", "ZGC", "CMS"],
+    "answer": 0,
+    "explain": "G1 replaced Parallel as the default in JDK 9 (JEP 248). On very small machines (1 CPU or under ~1.8 GB) the JVM still picks Serial."
+  },
+  {
+    "q": "You need sub-millisecond GC pauses on a 100 GB heap. Which collector?",
+    "options": ["ZGC", "Parallel", "Serial", "G1 with MaxGCPauseMillis=1"],
+    "answer": 0,
+    "explain": "ZGC does marking and relocation concurrently, so pauses don't grow with the heap. G1's pause goal is a target, not a guarantee, and 1 ms is unrealistic for it."
+  },
+  {
+    "q": "In G1, what is a humongous object?",
+    "options": ["An object at least half a region in size, allocated straight into contiguous old regions", "Any object larger than 1 MB in Eden", "An object that survived 15 GCs", "An array of more than a million elements"],
+    "answer": 0,
+    "explain": "Humongous allocations skip the young gen and can fragment the heap. Many of them is a sign to increase `G1HeapRegionSize` or avoid huge arrays."
+  },
+  {
+    "q": "When is a SoftReference cleared?",
+    "options": ["Under memory pressure, and always before an OutOfMemoryError", "At the next GC", "Never automatically", "When the referent's finalize() runs"],
+    "answer": 0,
+    "explain": "Soft references survive while memory is plentiful, which once made them popular for caches. A real cache with size limits (Caffeine) is more predictable."
+  },
+  {
+    "q": "An object is only reachable through WeakReferences. When is it collected?",
+    "options": ["At the next GC that processes it", "Only when memory is low", "Never, while the WeakReference exists", "When the WeakReference is enqueued manually"],
+    "answer": 0,
+    "explain": "Weak references don't keep objects alive at all. That's how WeakHashMap entries disappear."
+  },
+  {
+    "q": "What is the status of `Object.finalize()`?",
+    "options": ["Deprecated for removal; use try-with-resources or Cleaner", "The recommended way to release native resources", "Removed in Java 11", "Called deterministically when an object is unreachable"],
+    "answer": 0,
+    "explain": "Finalization is unpredictable, slows GC and can resurrect objects. JEP 421 (JDK 18) deprecated it for removal."
+  },
+  {
+    "q": "What does `OutOfMemoryError: GC overhead limit exceeded` mean?",
+    "options": ["The JVM spends almost all its time in GC while recovering very little memory", "The GC thread crashed", "Too many GC threads were started", "The GC log file is full"],
+    "answer": 0,
+    "explain": "With the Parallel GC the threshold is over 98% of time in GC recovering under 2% of the heap. It usually means a leak or a heap that's simply too small."
+  },
+  {
+    "q": "A JVM runs in a container with a 2 GB memory limit and no -Xmx. What's the default max heap?",
+    "options": ["About 512 MB (25% of the limit)", "2 GB", "1.5 GB", "The host machine's RAM / 4"],
+    "answer": 0,
+    "explain": "Modern JVMs are container-aware and default `MaxRAMPercentage` to 25. Services usually set it to 60–75%, leaving room for metaspace, threads and direct memory."
+  },
+  {
+    "q": "What can escape analysis let the JIT do?",
+    "options": ["Replace a non-escaping object with locals, so it's never allocated on the heap", "Move objects to the old generation earlier", "Release objects before they're unreachable", "Allocate objects in Metaspace"],
+    "answer": 0,
+    "explain": "Scalar replacement splits an object into its fields. It also enables lock elision on objects no other thread can see."
+  },
+  {
+    "q": "Why is object allocation in Java so cheap?",
+    "options": ["Each thread bumps a pointer in its own TLAB, with no synchronization", "Objects are allocated on the stack", "The JVM pre-creates objects", "Allocation is lazy until first use"],
+    "answer": 0,
+    "explain": "A TLAB is a chunk of Eden reserved for one thread. Allocation is a pointer increment plus a bounds check; only a new TLAB needs coordination."
+  },
+  {
+    "q": "What is the card table for?",
+    "options": ["Tracking old-to-young references, so a minor GC doesn't scan the whole old generation", "Mapping classes to their loaders", "Storing object hash codes", "Recording which threads are at a safepoint"],
+    "answer": 0,
+    "explain": "A write barrier marks the card (a small heap chunk) when a reference field is written. A minor GC scans only dirty cards as extra roots."
+  },
+  {
+    "q": "Which tool shows what retains the most memory in a heap dump?",
+    "options": ["Eclipse MAT (dominator tree, retained size)", "jstat", "javap", "jdeps"],
+    "answer": 0,
+    "explain": "MAT's dominator tree shows objects whose removal would free the most memory, and \"path to GC roots\" shows why they're still alive."
+  },
+  {
+    "q": "`OutOfMemoryError: unable to create native thread`. What's the likely cause?",
+    "options": ["The OS thread limit or native memory is exhausted, not the heap", "-Xmx is too small", "Too many classes are loaded", "A deadlock"],
+    "answer": 0,
+    "explain": "Each platform thread needs an OS thread and native stack memory. Look for thread leaks (pools created per request), or check `ulimit -u` and container pid limits."
+  },
+  {
+    "q": "Why can't an application replace `java.lang.String` with its own class of the same name?",
+    "options": ["Parent delegation: the bootstrap loader always loads it first", "The class name is reserved by the compiler", "The JVM verifies a signature on every core class", "It can, using -cp"],
+    "answer": 0,
+    "explain": "A class loader asks its parent before loading itself, and `java.*` packages are also protected from being defined by user loaders."
+  },
+  {
+    "q": "What does `System.gc()` do?",
+    "options": ["Suggests a GC; the JVM may ignore it", "Forces an immediate full GC every time", "Runs a minor GC", "Frees all unreachable objects synchronously"],
+    "answer": 0,
+    "explain": "Usually it triggers a full GC, but it's only a hint and `-XX:+DisableExplicitGC` turns it off. Calling it in application code is almost always wrong."
+  },
+  {
+    "q": "Why do servers often set `-Xms` equal to `-Xmx`?",
+    "options": ["To avoid heap resizing at runtime and claim memory up front", "It's required by G1", "It disables GC pauses", "It makes the heap use huge pages"],
+    "answer": 0,
+    "explain": "Growing and shrinking the heap costs extra GCs, and a fixed size makes the memory footprint predictable, which matters for containers."
+  },
+  {
+    "q": "What does a stop-the-world pause mean?",
+    "options": ["All application threads are paused at a safepoint while the GC works", "Only the allocating thread is paused", "The JVM process is suspended by the OS", "New threads can't be created"],
+    "answer": 0,
+    "explain": "Even concurrent collectors have short STW phases. A thread in a long loop without safepoint polls can delay everyone (time-to-safepoint)."
+  },
+  {
+    "q": "What is the maximum tenuring threshold in HotSpot?",
+    "options": ["15", "8", "31", "Unlimited"],
+    "answer": 0,
+    "explain": "Object age is stored in 4 bits of the header. Objects can be promoted earlier if Survivor space overflows (premature promotion)."
+  },
+  {
+    "q": "`NoClassDefFoundError` vs `ClassNotFoundException`?",
+    "options": ["NoClassDefFoundError: class present at compile time but missing or failed to init at runtime; ClassNotFoundException: explicit loading by name failed", "They're the same", "ClassNotFoundException is an Error; NoClassDefFoundError is checked", "NoClassDefFoundError only happens in Java 8"],
+    "answer": 0,
+    "explain": "`NoClassDefFoundError` often hides an earlier `ExceptionInInitializerError` in a static initializer. Check the first error in the log."
+  }
+]

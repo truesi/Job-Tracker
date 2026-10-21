@@ -1,0 +1,148 @@
+[
+  {
+    "q": "In Spring AOP, what is a join point always?",
+    "options": ["A method execution", "A field access", "A constructor call", "Any line of code"],
+    "answer": 0,
+    "explain": "Proxies can only intercept method calls that go through them. AspectJ supports many more join point kinds."
+  },
+  {
+    "q": "Which advice type can prevent the target method from running at all?",
+    "options": ["@Around", "@Before (without throwing)", "@After", "@AfterReturning"],
+    "answer": 0,
+    "explain": "@Around decides whether to call `proceed()`. @Before can only stop the call by throwing an exception."
+  },
+  {
+    "q": "When does `@After` advice run?",
+    "options": ["After the method, whether it returned normally or threw (like finally)", "Only after a normal return", "Only after an exception", "Before the method returns its value"],
+    "answer": 0,
+    "explain": "@AfterReturning is for success only, @AfterThrowing for exceptions only."
+  },
+  {
+    "q": "Why is the transaction ignored here?",
+    "code": "@Service\nclass ReportService {\n    public void generate() {\n        save();   // called from inside the bean\n    }\n\n    @Transactional\n    public void save() { ... }\n}",
+    "options": ["Self-invocation bypasses the proxy, so no transaction advice runs", "@Transactional doesn't work on void methods", "save() must be private", "@Service beans aren't proxied"],
+    "answer": 0,
+    "explain": "`save()` is called on `this`, the raw target, not on the proxy. Move it to another bean, or call it through the proxy."
+  },
+  {
+    "q": "Which proxy type does Spring Boot use by default?",
+    "options": ["CGLIB class-based proxies (proxy-target-class=true)", "JDK dynamic proxies", "AspectJ compile-time weaving", "Javassist proxies"],
+    "answer": 0,
+    "explain": "Boot sets `spring.aop.proxy-target-class=true`, so injecting by concrete class works even when the bean implements interfaces."
+  },
+  {
+    "q": "A bean implements `PaymentService` and is proxied with a JDK dynamic proxy. Another bean injects `StripePaymentService` (the class). What happens?",
+    "options": ["BeanNotOfRequiredTypeException: the proxy only implements the interface", "It works", "Spring switches to CGLIB automatically", "The raw bean is injected without the proxy"],
+    "answer": 0,
+    "explain": "A JDK proxy is a `$Proxy` class implementing the interfaces, not a subclass. Inject the interface, or use class-based proxies."
+  },
+  {
+    "q": "A `@Transactional` method is declared `final` in a CGLIB-proxied bean. What happens when it's called from another bean?",
+    "options": ["It runs without a transaction: CGLIB can't override final methods", "It runs in a transaction normally", "Startup fails", "Spring makes the method non-final"],
+    "answer": 0,
+    "explain": "The subclass can't override it, so the call goes straight to the target, silently. Watch out in Kotlin, where classes and methods are final by default (the kotlin-spring plugin opens them)."
+  },
+  {
+    "q": "What happens with `@Transactional` on a `private` method?",
+    "options": ["It's ignored", "It works if called from the same class", "Compile error", "Spring makes the method public"],
+    "answer": 0,
+    "explain": "Private methods can't be overridden by a subclass proxy and are always called directly. Spring 6 does support protected and package-private methods on class-based proxies."
+  },
+  {
+    "q": "Which pointcut matches every method of every class in `com.shop.service` and its subpackages?",
+    "options": ["execution(* com.shop.service..*.*(..))", "execution(* com.shop.service.*(..))", "within(com.shop.service)", "execution(com.shop.service..*)"],
+    "answer": 0,
+    "explain": "`..` after the package means \"this package and subpackages\", `*.*` = any class, any method, and `(..)` = any arguments. `within(com.shop.service..*)` would also work."
+  },
+  {
+    "q": "How do you target all methods annotated with your own `@Audited` annotation?",
+    "options": ["@annotation(com.shop.Audited)", "@within(com.shop.Audited)", "execution(@Audited)", "bean(Audited)"],
+    "answer": 0,
+    "explain": "@annotation matches the method's annotation; @within matches the declaring class's annotation. The annotation needs RUNTIME retention."
+  },
+  {
+    "q": "What's wrong with this @Around advice?",
+    "code": "@Around(\"@annotation(Timed)\")\npublic Object time(ProceedingJoinPoint pjp) throws Throwable {\n    long start = System.nanoTime();\n    pjp.proceed();\n    log(System.nanoTime() - start);\n    return null;\n}",
+    "options": ["It discards the method's return value: callers always get null", "proceed() must be called twice", "@Around must return void", "Nothing"],
+    "answer": 0,
+    "explain": "Store and return the result: `Object result = pjp.proceed(); ... return result;`, and put the logging in a finally block to time failures too."
+  },
+  {
+    "q": "How does Spring AOP weave aspects?",
+    "options": ["At runtime, by wrapping beans in proxies", "At compile time with the ajc compiler", "At class-load time by default", "By modifying source code"],
+    "answer": 0,
+    "explain": "Spring can also use AspectJ load-time weaving (`@EnableLoadTimeWeaving`), but the default is proxies created by a BeanPostProcessor."
+  },
+  {
+    "q": "Which of these can AspectJ do that Spring AOP can't?",
+    "options": ["Intercept field access, constructors and self-invocations, on any object", "Use the execution() pointcut", "Use @Around advice", "Order aspects with @Order"],
+    "answer": 0,
+    "explain": "AspectJ changes the bytecode itself, so there's no proxy to bypass."
+  },
+  {
+    "q": "Two aspects apply to one method: @Order(1) LoggingAspect and @Order(2) SecurityAspect, both @Around. Which one is outermost?",
+    "options": ["LoggingAspect: a lower value means higher precedence", "SecurityAspect", "Undefined", "They run in parallel"],
+    "answer": 0,
+    "explain": "Highest precedence runs first on the way in and last on the way out, like nested try blocks."
+  },
+  {
+    "q": "A method has both `@Retryable` and `@Transactional`. How should the advice be ordered?",
+    "options": ["Retry outside the transaction, so each attempt gets a fresh transaction", "Transaction outside the retry", "The order doesn't matter", "They can't be combined"],
+    "answer": 0,
+    "explain": "If the transaction wraps the retry, all attempts share one transaction that's already marked rollback-only after the first failure."
+  },
+  {
+    "q": "An object is created with `new OrderService()` and its method has `@Cacheable`. Is the result cached?",
+    "options": ["No: only Spring-managed beans get proxies", "Yes, the annotation always works", "Only on the second call", "Yes, if caching is enabled"],
+    "answer": 0,
+    "explain": "Annotations are just metadata; the proxy is what does the work. AspectJ weaving would be needed for objects outside the container."
+  },
+  {
+    "q": "Can `@AfterThrowing` advice swallow the exception?",
+    "options": ["No: the exception keeps propagating (the advice can throw a different one)", "Yes, by returning normally", "Yes, by returning null", "Only for checked exceptions"],
+    "answer": 0,
+    "explain": "To translate or suppress an exception, use @Around with try/catch around `proceed()`."
+  },
+  {
+    "q": "Which is a typical cross-cutting concern?",
+    "options": ["Transaction management", "Calculating an order total", "Mapping a DTO to an entity", "Validating a specific business rule"],
+    "answer": 0,
+    "explain": "Cross-cutting = needed uniformly in many places, independent of the business logic: transactions, security, logging, metrics, caching."
+  },
+  {
+    "q": "Which component creates the AOP proxies for @Aspect classes in Spring?",
+    "options": ["AnnotationAwareAspectJAutoProxyCreator, a BeanPostProcessor", "The Java compiler", "The DispatcherServlet", "A BeanFactoryPostProcessor"],
+    "answer": 0,
+    "explain": "After a bean is initialized, it checks which advisors match the bean and wraps it in a proxy if any do."
+  },
+  {
+    "q": "What's the difference between `execution(...)` and `within(...)` pointcuts?",
+    "options": ["execution matches method signatures; within matches all methods of types in a given package or type", "within matches annotations", "execution only works for public classes", "They're the same"],
+    "answer": 0,
+    "explain": "`within(com.shop.web..*)` = every method in the web layer; execution allows filtering by return type, name and parameters."
+  },
+  {
+    "q": "How does a Spring Data repository interface get an implementation?",
+    "options": ["Spring creates a proxy at runtime whose interceptors implement the query methods", "javac generates the class", "You must write an Impl class", "Hibernate generates it at build time"],
+    "answer": 0,
+    "explain": "The proxy routes CRUD methods to SimpleJpaRepository and derives queries from method names, with transaction and exception translation advice on top."
+  },
+  {
+    "q": "An `@Async` method is called from another method of the same bean. How does it run?",
+    "options": ["Synchronously, in the caller's thread", "Asynchronously, as expected", "It throws IllegalStateException", "It runs twice"],
+    "answer": 0,
+    "explain": "Same self-invocation problem as @Transactional: no proxy, no executor hand-off."
+  },
+  {
+    "q": "What does the Spring-specific `bean(...)` pointcut designator match?",
+    "options": ["Beans by name, with wildcards, e.g. bean(*Service)", "Methods annotated with @Bean", "Classes annotated with @Component", "Prototype beans"],
+    "answer": 0,
+    "explain": "It isn't part of AspectJ itself; it works only in Spring's proxy-based AOP."
+  },
+  {
+    "q": "In an advice method, what can a `JoinPoint` parameter give you?",
+    "options": ["The method signature, arguments and target object", "The caller's stack trace", "The HTTP request", "The current transaction"],
+    "answer": 0,
+    "explain": "`getSignature()`, `getArgs()`, `getTarget()`, `getThis()` (the proxy). @Around gets the ProceedingJoinPoint subtype with `proceed()`."
+  }
+]

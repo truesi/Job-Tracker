@@ -1,0 +1,159 @@
+[
+  {
+    "q": "Что выведет код?",
+    "code": "Integer a = 127, b = 127;\nInteger c = 128, d = 128;\nSystem.out.println((a == b) + \" \" + (c == d));",
+    "options": ["true false", "true true", "false false", "false true"],
+    "answer": 0,
+    "explain": "Autoboxing вызывает `Integer.valueOf`, который по умолчанию кэширует -128..127. Для 127 возвращается один и тот же объект из кэша; для 128 создаются два разных объекта, поэтому `==` даёт false."
+  },
+  {
+    "q": "Что выведет код?",
+    "code": "String s1 = \"java\";\nString s2 = new String(\"java\");\nString s3 = s2.intern();\nSystem.out.println((s1 == s2) + \" \" + (s1 == s3));",
+    "options": ["false true", "true true", "false false", "true false"],
+    "answer": 0,
+    "explain": "`new String` всегда создаёт новый объект, поэтому `s1 != s2`. `intern()` возвращает экземпляр из пула, то есть литерал `s1`."
+  },
+  {
+    "q": "Класс переопределяет `equals()`, но не `hashCode()`. Ты добавляешь два равных экземпляра в `HashSet`. Что произойдёт?",
+    "options": ["Скорее всего, в множестве окажутся оба экземпляра", "Останется один, потому что HashSet опирается на equals()", "Ошибка компиляции: equals и hashCode нужно переопределять вместе", "HashSet бросит IllegalStateException"],
+    "answer": 0,
+    "explain": "HashSet сначала выбирает bucket по `hashCode()`. Identity hash-коды по умолчанию разные, объекты попадают в разные bucket, и до `equals()` дело не доходит."
+  },
+  {
+    "q": "Что вернёт `f()`?",
+    "code": "static int f() {\n    try {\n        return 1;\n    } finally {\n        return 2;\n    }\n}",
+    "options": ["2", "1", "Ошибка компиляции", "Будет брошено исключение"],
+    "answer": 0,
+    "explain": "`return` в `finally` перекрывает значение из `try` (и проглотил бы исключение). Поэтому return из `finally` считается багом."
+  },
+  {
+    "q": "Что выведет код?",
+    "code": "static void change(StringBuilder sb) {\n    sb.append(\"!\");\n    sb = new StringBuilder(\"new\");\n}\n\nStringBuilder sb = new StringBuilder(\"hi\");\nchange(sb);\nSystem.out.println(sb);",
+    "options": ["hi!", "hi", "new", "new!"],
+    "answer": 0,
+    "explain": "Java передаёт ссылку по значению. `append` меняет общий объект; переприсваивание параметра меняет только локальную копию ссылки."
+  },
+  {
+    "q": "Что выведет код?",
+    "code": "static void m(Object o) { System.out.println(\"Object\"); }\nstatic void m(String s) { System.out.println(\"String\"); }\n\nm(null);",
+    "options": ["String", "Object", "Ошибка компиляции: неоднозначный вызов", "NullPointerException"],
+    "answer": 0,
+    "explain": "При выборе перегрузки берётся самый специфичный подходящий метод. `String` специфичнее `Object`. С `m(String)` и `m(Integer)` вызов был бы неоднозначным."
+  },
+  {
+    "q": "Что выведет код?",
+    "code": "class A { static String name() { return \"A\"; } }\nclass B extends A { static String name() { return \"B\"; } }\n\nA a = new B();\nSystem.out.println(a.name());",
+    "options": ["A", "B", "Ошибка компиляции", "NullPointerException"],
+    "answer": 0,
+    "explain": "Статические методы скрываются, а не переопределяются. Вызов связывается на этапе компиляции с объявленным типом `A`."
+  },
+  {
+    "q": "Метод должен добавлять `Integer` в список, который может быть `List<Integer>`, `List<Number>` или `List<Object>`. Какой тип параметра подходит?",
+    "options": ["`List<? super Integer>`", "`List<? extends Integer>`", "`List<Number>`", "`List<?>`"],
+    "answer": 0,
+    "explain": "PECS: потребитель значений использует `super`. `? extends` позволяет читать, но не добавлять, а `List<Number>` не примет `List<Integer>`, потому что generics инвариантны."
+  },
+  {
+    "q": "Почему внутри generic-класса нельзя написать `new T()`?",
+    "options": ["Type erasure: T неизвестен в рантайме", "T может быть интерфейсом", "У generic-классов не бывает конструкторов", "Можно, если у T есть конструктор без аргументов"],
+    "answer": 0,
+    "explain": "Аргументы типов стираются при компиляции. Обычный обходной путь: передать `Class<T>` или `Supplier<T>`."
+  },
+  {
+    "q": "Что здесь произойдёт?",
+    "code": "Object[] arr = new String[1];\narr[0] = 42;",
+    "options": ["Скомпилируется, в рантайме ArrayStoreException", "Ошибка компиляции", "Сработает, arr[0] равен 42", "ClassCastException"],
+    "answer": 0,
+    "explain": "Массивы ковариантны, поэтому присваивание компилируется, но массив знает свой реальный тип элементов (`String`) и отклоняет `Integer`."
+  },
+  {
+    "q": "Вызывается ли здесь `load()`?",
+    "code": "String v = Optional.of(\"x\").orElse(load());",
+    "options": ["Да, всегда", "Нет, только если Optional пуст", "Только при первом вызове", "Ошибка компиляции"],
+    "answer": 0,
+    "explain": "`orElse` принимает значение, поэтому аргумент вычисляется до вызова. Для ленивого вычисления используй `orElseGet(() -> load())`."
+  },
+  {
+    "q": "`Collectors.toMap(User::getEmail, u -> u)` встречает двух пользователей с одинаковым email. Что произойдёт?",
+    "options": ["IllegalStateException: duplicate key", "Победит последний пользователь", "Победит первый пользователь", "Оба сохранятся в списке"],
+    "answer": 0,
+    "explain": "Без merge-функции `toMap` бросает исключение на дубликате ключа. Передай третий аргумент, например `(a, b) -> a`."
+  },
+  {
+    "q": "Что выведет код?",
+    "code": "Stream.of(1, 2, 3)\n      .peek(System.out::print)\n      .filter(x -> x > 1);",
+    "options": ["Ничего", "123", "23", "Ошибка компиляции"],
+    "answer": 0,
+    "explain": "Стримы ленивые: промежуточные операции выполняются только при вызове терминальной (`collect`, `forEach`, `count`...)."
+  },
+  {
+    "q": "Какое утверждение о records в Java верно?",
+    "options": ["Поля private final; equals, hashCode и toString генерируются", "Record может наследовать другой класс", "Record может объявлять дополнительные поля экземпляра", "Records генерируют сеттеры"],
+    "answer": 0,
+    "explain": "Records неявно final, наследуют `java.lang.Record` и не могут добавлять поля экземпляра. Зато могут реализовывать интерфейсы и иметь static поля и методы."
+  },
+  {
+    "q": "Что выведет `new Child()`?",
+    "code": "class Parent {\n    static { System.out.print(\"A\"); }\n    { System.out.print(\"B\"); }\n    Parent() { System.out.print(\"C\"); }\n}\nclass Child extends Parent {\n    static { System.out.print(\"D\"); }\n    { System.out.print(\"E\"); }\n    Child() { System.out.print(\"F\"); }\n}",
+    "options": ["ADBCEF", "ABCDEF", "ADBECF", "DABECF"],
+    "answer": 0,
+    "explain": "Сначала static-инициализаторы, родитель раньше потомка. Потом инициализаторы экземпляра и конструктор родителя, затем потомка."
+  },
+  {
+    "q": "Какое исключение обязательно ловить или объявлять?",
+    "options": ["`InterruptedException`", "`IllegalStateException`", "`ClassCastException`", "`ConcurrentModificationException`"],
+    "answer": 0,
+    "explain": "`InterruptedException` наследует `Exception` напрямую, поэтому checked. Остальные наследуют `RuntimeException`."
+  },
+  {
+    "q": "В try-with-resources тело бросает E1, а `close()` бросает E2. Что получит вызывающий код?",
+    "options": ["E1, а E2 в `getSuppressed()`", "E2, а E1 как cause", "Только E2, E1 потеряно", "Оба, завёрнутые в новое исключение"],
+    "answer": 0,
+    "explain": "Основное исключение из тела побеждает, исключения при закрытии прикрепляются как suppressed. Старый try/finally, наоборот, потерял бы E1."
+  },
+  {
+    "q": "Что гарантирует `final List<String> list = new ArrayList<>();`?",
+    "options": ["Переменную нельзя переприсвоить; список по-прежнему можно менять", "Список неизменяемый", "Список потокобезопасный", "Элементы можно добавлять, но нельзя удалять"],
+    "answer": 0,
+    "explain": "`final` относится к ссылке, а не к объекту. Для неизменяемого списка используй `List.of(...)` или `Collections.unmodifiableList`."
+  },
+  {
+    "q": "Объект лежит ключом в `HashMap`. Ты меняешь поле, участвующее в его `hashCode()`, и вызываешь `map.get(sameObject)`. Что скорее всего произойдёт?",
+    "options": ["Вернётся null: поиск пойдёт в другой bucket", "Вернётся значение: ссылка та же", "ConcurrentModificationException", "Map сама перехеширует запись"],
+    "answer": 0,
+    "explain": "Запись остаётся в bucket, вычисленном по старому hash. Поэтому ключи map должны быть неизменяемыми."
+  },
+  {
+    "q": "Класс реализует интерфейсы A и B, в обоих есть `default void hello()`. Что произойдёт?",
+    "options": ["Ошибка компиляции, если класс не переопределит hello()", "Победит версия A: он указан первым", "Победит версия B: он указан последним", "Исключение в рантайме при вызове hello()"],
+    "answer": 0,
+    "explain": "Java не выбирает между конфликтующими default-методами. Класс обязан переопределить метод и может делегировать через `A.super.hello()`."
+  },
+  {
+    "q": "Что выведут эти две строки?",
+    "code": "System.out.println('a' + 1);\nSystem.out.println(\"\" + 'a' + 1);",
+    "options": ["98, затем a1", "b, затем a1", "a1, затем a1", "98, затем 98"],
+    "answer": 0,
+    "explain": "`char + int` это сложение чисел ('a' равно 97). Если выражение начинается со строки, `+` становится конкатенацией слева направо."
+  },
+  {
+    "q": "Что произойдёт?",
+    "code": "Map<String, Integer> m = new HashMap<>();\nint count = m.get(\"x\");",
+    "options": ["NullPointerException", "count равен 0", "Ошибка компиляции", "ClassCastException"],
+    "answer": 0,
+    "explain": "`get` возвращает `null`, а auto-unboxing `null` в `int` бросает NPE. Используй `getOrDefault(\"x\", 0)`."
+  },
+  {
+    "q": "Что выведет код?",
+    "code": "Long l = 1L;\nSystem.out.println(l.equals(1) + \" \" + (l == 1));",
+    "options": ["false true", "true true", "false false", "true false"],
+    "answer": 0,
+    "explain": "`equals(1)` упаковывает 1 в `Integer`, а `Long.equals` требует `Long`. `l == 1` распаковывает `l` и сравнивает числа."
+  },
+  {
+    "q": "Что даёт `sealed` интерфейс?",
+    "options": ["Реализовать его могут только разрешённые классы, поэтому switch по ним может быть исчерпывающим", "Его методы нельзя переопределять", "Его не могут реализовывать records", "Его реализации сериализуемы по умолчанию"],
+    "answer": 0,
+    "explain": "`sealed ... permits X, Y` закрывает иерархию. С pattern matching для switch (Java 21) компилятор проверяет исчерпываемость без ветки `default`."
+  }
+]

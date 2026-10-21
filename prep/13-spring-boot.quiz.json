@@ -1,0 +1,146 @@
+[
+  {
+    "q": "Which annotations does `@SpringBootApplication` combine?",
+    "options": ["@SpringBootConfiguration, @EnableAutoConfiguration, @ComponentScan", "@Configuration, @EnableWebMvc, @ComponentScan", "@EnableAutoConfiguration, @EnableTransactionManagement, @EnableCaching", "@Component, @Bean, @Import"],
+    "answer": 0,
+    "explain": "@SpringBootConfiguration is a @Configuration that tests can find. Component scanning starts at the annotated class's package."
+  },
+  {
+    "q": "In Spring Boot 3, how are auto-configuration classes discovered?",
+    "options": ["From META-INF/spring/org.springframework.boot.autoconfigure.AutoConfiguration.imports files on the classpath", "By scanning all jars for @Configuration", "From spring.factories only", "From application.yml"],
+    "answer": 0,
+    "explain": "Boot 2.7 introduced the imports file, and Boot 3 dropped spring.factories for auto-configuration."
+  },
+  {
+    "q": "You declare your own `DataSource` @Bean. What does Boot's DataSource auto-configuration do?",
+    "options": ["It backs off thanks to @ConditionalOnMissingBean, and yours is used", "It creates a second DataSource", "Startup fails with two DataSources", "It overrides yours"],
+    "answer": 0,
+    "explain": "User configuration is processed before auto-configuration, and most auto-configured beans are conditional on no user bean of that type."
+  },
+  {
+    "q": "How do you find out why an auto-configuration did or didn't apply?",
+    "options": ["Run with --debug (conditions evaluation report) or check /actuator/conditions", "Read the Boot source code", "Enable TRACE logging for all packages", "It can't be found out"],
+    "answer": 0,
+    "explain": "The report lists positive and negative matches with the exact condition that passed or failed."
+  },
+  {
+    "q": "`spring.datasource.url` is set in application.yml and also as an environment variable. Which wins?",
+    "options": ["The environment variable", "application.yml", "Whichever was defined last", "Startup fails due to the conflict"],
+    "answer": 0,
+    "explain": "Environment variables rank above packaged config files, and only command-line arguments rank above them among the common sources. That's what makes 12-factor style config work."
+  },
+  {
+    "q": "Which environment variable sets `spring.datasource.url`?",
+    "options": ["SPRING_DATASOURCE_URL", "spring.datasource.url", "SPRING-DATASOURCE-URL", "DATASOURCE_URL"],
+    "answer": 0,
+    "explain": "Relaxed binding: dots become underscores, upper case, dashes removed. List indexes use `_0_`, as in `MY_LIST_0_NAME`."
+  },
+  {
+    "q": "The main class is in `com.shop.app` and a `@Service` is in `com.shop.billing`. What happens?",
+    "options": ["The service isn't found: scanning starts at com.shop.app", "It's found: Boot scans the whole classpath", "It's found because @Service is special", "Startup fails"],
+    "answer": 0,
+    "explain": "Put the main class in the root package (`com.shop`), or set `scanBasePackages`."
+  },
+  {
+    "q": "What does `@WebMvcTest(OrderController.class)` load?",
+    "options": ["The MVC layer (controllers, advice, converters, filters) but not services or repositories", "The entire application context", "Only the controller instance, without MVC", "Controllers and repositories"],
+    "answer": 0,
+    "explain": "Dependencies of the controller must be provided as mocks (@MockitoBean). MockMvc is auto-configured."
+  },
+  {
+    "q": "What does `@DataJpaTest` do by default?",
+    "options": ["Loads JPA components, makes each test transactional and rolls it back, and replaces the DataSource with an embedded one if possible", "Loads the full context with a real DB", "Commits each test's data", "Mocks all repositories"],
+    "answer": 0,
+    "explain": "To test against the real database type, use Testcontainers and `@AutoConfigureTestDatabase(replace = NONE)` (or @ServiceConnection)."
+  },
+  {
+    "q": "Why can many @SpringBootTest classes with different @MockitoBean sets make the test suite slow?",
+    "options": ["Each distinct configuration needs its own application context; the context cache can't reuse them", "Mockito is slow", "Each test restarts the JVM", "@MockitoBean disables parallel tests"],
+    "answer": 0,
+    "explain": "Spring caches contexts by configuration. Standardize mocks in a shared base class, or prefer slices and plain unit tests."
+  },
+  {
+    "q": "What does `@ServiceConnection` on a Testcontainers container field do?",
+    "options": ["Boot derives connection properties (URL, user, password) from the running container automatically", "It starts the container in a separate JVM", "It mocks the database", "It registers the container as a REST client"],
+    "answer": 0,
+    "explain": "It replaces manual @DynamicPropertySource code. It's supported for PostgreSQL, Kafka, Redis, MongoDB and more since Boot 3.1."
+  },
+  {
+    "q": "Which Actuator endpoints map to Kubernetes probes?",
+    "options": ["/actuator/health/liveness and /actuator/health/readiness", "/actuator/info and /actuator/metrics", "/actuator/env", "/actuator/startup"],
+    "answer": 0,
+    "explain": "Liveness = \"restart me if broken\". Readiness = \"send me traffic\". Don't put external dependencies into liveness, or a DB outage restarts every pod."
+  },
+  {
+    "q": "How can you change a logger's level in a running Boot app?",
+    "options": ["POST to /actuator/loggers/{name} with a configuredLevel", "Edit application.yml; it reloads automatically", "It requires a restart", "Through /actuator/env"],
+    "answer": 0,
+    "explain": "Handy for debugging production temporarily. The endpoint must be exposed and secured."
+  },
+  {
+    "q": "Which embedded server does `spring-boot-starter-web` use by default?",
+    "options": ["Tomcat", "Jetty", "Undertow", "Netty"],
+    "answer": 0,
+    "explain": "Exclude spring-boot-starter-tomcat and add the Jetty/Undertow starter to switch. WebFlux defaults to Reactor Netty."
+  },
+  {
+    "q": "How do ApplicationRunner and CommandLineRunner differ?",
+    "options": ["ApplicationRunner gets parsed ApplicationArguments; CommandLineRunner gets raw String[] args", "CommandLineRunner runs before the context starts", "ApplicationRunner runs only in tests", "Only one of them can exist per app"],
+    "answer": 0,
+    "explain": "Both run after the context is refreshed, just before ApplicationReadyEvent, ordered by @Order."
+  },
+  {
+    "q": "What is a Spring Boot starter?",
+    "options": ["A dependency descriptor that brings a set of libraries (and their auto-configuration) with compatible versions", "A main class template", "A Maven plugin", "A code generator"],
+    "answer": 0,
+    "explain": "Starters themselves contain almost no code; the auto-configuration lives in spring-boot-autoconfigure (or a custom -autoconfigure module)."
+  },
+  {
+    "q": "What does `server.shutdown=graceful` do?",
+    "options": ["Stops accepting new requests and lets in-flight requests finish within a timeout", "Waits forever for all threads", "Restarts the server instead of stopping", "Disables shutdown hooks"],
+    "answer": 0,
+    "explain": "Combined with a Kubernetes preStop delay and readiness turning DOWN, it gives zero-downtime rolling deploys. It's the default since Boot 3.4."
+  },
+  {
+    "q": "In Spring Boot 3, what replaced Spring Cloud Sleuth for distributed tracing?",
+    "options": ["Micrometer Tracing", "Zipkin Client", "Spring Cloud Trace", "OpenTracing"],
+    "answer": 0,
+    "explain": "Micrometer Observation API with Micrometer Tracing bridges (OpenTelemetry or Brave) and exporters such as OTLP or Zipkin."
+  },
+  {
+    "q": "What's the trade-off of `spring.main.lazy-initialization=true`?",
+    "options": ["Faster startup, but misconfiguration errors surface at first use and the first requests are slower", "Lower memory but no AOP", "It disables auto-configuration", "No trade-off"],
+    "answer": 0,
+    "explain": "Eager singletons fail fast at startup. Lazy init is handy in development; in production, failing at deploy time is usually better."
+  },
+  {
+    "q": "A `@ConfigurationProperties` record has `@NotNull` fields and the class is `@Validated`. The property is missing. What happens?",
+    "options": ["The application fails to start with a binding validation error", "The field stays null silently", "A warning is logged", "The first request fails"],
+    "answer": 0,
+    "explain": "Failing at startup is exactly what you want for missing configuration."
+  },
+  {
+    "q": "Which Actuator endpoints are exposed over HTTP by default in Boot 3?",
+    "options": ["Only health", "All of them", "health and info", "None"],
+    "answer": 0,
+    "explain": "Since Boot 2.5 only health is exposed over the web by default. Expose more with `management.endpoints.web.exposure.include`, and protect them."
+  },
+  {
+    "q": "How is a Boot fat jar laid out?",
+    "options": ["BOOT-INF/classes, BOOT-INF/lib with nested jars, and Boot's launcher classes", "One flattened jar with all classes merged", "A WAR with WEB-INF", "Only your classes; dependencies are downloaded at startup"],
+    "answer": 0,
+    "explain": "Plain Java can't load nested jars, so Boot's JarLauncher sets up a class loader that can. The layered jar index then splits it into Docker layers."
+  },
+  {
+    "q": "In your own starter's auto-configuration, how do you let users replace your default `Client` bean?",
+    "options": ["Annotate your @Bean with @ConditionalOnMissingBean", "Use @Primary on your bean", "Document that users must exclude your auto-configuration", "Mark it @Lazy"],
+    "answer": 0,
+    "explain": "User @Configuration is processed first, so a user's `Client` bean makes yours back off."
+  },
+  {
+    "q": "What does `spring-boot-devtools` provide?",
+    "options": ["Automatic restart on classpath changes and LiveReload, disabled in packaged production jars", "Production monitoring", "A database admin UI", "Code generation"],
+    "answer": 0,
+    "explain": "The restart uses two class loaders (libraries vs your code) to be fast. Devtools turns itself off when the app runs from a fully packaged jar."
+  }
+]

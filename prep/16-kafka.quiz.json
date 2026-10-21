@@ -1,0 +1,152 @@
+[
+  {
+    "q": "What ordering does Kafka guarantee?",
+    "options": ["Order within a single partition only", "Global order across the topic", "Order per producer across all partitions", "No ordering at all"],
+    "answer": 0,
+    "explain": "For per-entity order, give all events of an entity the same key so they land in one partition."
+  },
+  {
+    "q": "Two records have the same key. Where do they go with the default partitioner?",
+    "options": ["The same partition (as long as the partition count doesn't change)", "Round-robin to different partitions", "A random partition", "Always partition 0"],
+    "answer": 0,
+    "explain": "The partition is a hash of the key modulo the partition count. Adding partitions changes the mapping."
+  },
+  {
+    "q": "A topic has 6 partitions and a consumer group has 8 consumers. What happens?",
+    "options": ["6 consumers get one partition each; 2 sit idle", "Each consumer gets 0.75 partitions", "Kafka creates 2 more partitions", "Two consumers share each partition"],
+    "answer": 0,
+    "explain": "A partition is consumed by at most one consumer per group. Partition count caps a group's parallelism."
+  },
+  {
+    "q": "Two different consumer groups subscribe to the same topic. Who gets each record?",
+    "options": ["Both groups get every record", "Only one of the groups", "The records are split between groups", "The group that subscribed first"],
+    "answer": 0,
+    "explain": "Groups are independent subscribers with their own offsets: that's how several services consume the same events."
+  },
+  {
+    "q": "replication.factor=3, min.insync.replicas=2, producer acks=all. What does a successful send guarantee?",
+    "options": ["At least 2 in-sync replicas have the record; one broker can fail without losing it", "All 3 replicas have it on disk", "Only the leader has it", "The consumer has processed it"],
+    "answer": 0,
+    "explain": "If fewer than 2 replicas are in sync, the producer gets NotEnoughReplicas errors instead of silently weakening durability."
+  },
+  {
+    "q": "A consumer processes a record, then crashes before committing the offset. What happens after restart?",
+    "options": ["The record is processed again (at-least-once)", "The record is skipped", "Kafka detects the crash and commits automatically", "The partition is blocked"],
+    "answer": 0,
+    "explain": "Committing after processing trades duplicates for no loss. That's why consumers should be idempotent."
+  },
+  {
+    "q": "What's the risk of auto-commit with asynchronous processing?",
+    "options": ["Offsets may be committed before processing finishes, so a crash loses records", "Auto-commit is never safe in any case", "It disables rebalancing", "It causes duplicates only"],
+    "answer": 0,
+    "explain": "Auto-commit commits what poll() returned. If processing happens elsewhere (another thread), the commit can run ahead of it."
+  },
+  {
+    "q": "A consumer takes longer than `max.poll.interval.ms` to process a batch. What happens?",
+    "options": ["It's removed from the group, its partitions are rebalanced, and its uncommitted records get reprocessed", "Kafka waits indefinitely", "The records are skipped", "The broker deletes the records"],
+    "answer": 0,
+    "explain": "Fixes: smaller batches (`max.poll.records`), faster processing, or a larger interval. Slow processing can otherwise cause endless rebalance loops."
+  },
+  {
+    "q": "What does the idempotent producer prevent?",
+    "options": ["Duplicates and reordering caused by producer retries within a partition", "Duplicate processing by consumers", "Duplicates across different producers", "Data loss when brokers crash"],
+    "answer": 0,
+    "explain": "The broker deduplicates by producer id and sequence number. It's on by default since Kafka 3.0."
+  },
+  {
+    "q": "How do you get exactly-once for a consume → transform → produce pipeline inside Kafka?",
+    "options": ["Transactions: transactional.id, send offsets in the transaction, consumers with isolation.level=read_committed", "acks=all alone", "Auto-commit with a short interval", "It's impossible in Kafka"],
+    "answer": 0,
+    "explain": "Output records and input offsets commit atomically. Kafka Streams does this with `processing.guarantee=exactly_once_v2`."
+  },
+  {
+    "q": "What does log compaction do?",
+    "options": ["Keeps at least the latest record for each key; a null value (tombstone) eventually removes the key", "Compresses messages with gzip", "Deletes all records older than retention.ms", "Merges partitions"],
+    "answer": 0,
+    "explain": "A compacted topic is a changelog/snapshot of current state per key, used for `__consumer_offsets` and Kafka Streams state."
+  },
+  {
+    "q": "What is consumer lag?",
+    "options": ["The difference between a partition's latest offset and the group's committed offset", "Network latency between consumer and broker", "Time spent in rebalancing", "The number of idle consumers"],
+    "answer": 0,
+    "explain": "Growing lag means consumers can't keep up. Alert on it (Burrow, Kafka exporter, Micrometer metrics)."
+  },
+  {
+    "q": "You increase a keyed topic from 6 to 12 partitions. What's the side effect?",
+    "options": ["Keys map to different partitions, so per-key ordering isn't guaranteed across the change", "Existing data is redistributed automatically", "Consumers stop working until restart", "Nothing at all"],
+    "answer": 0,
+    "explain": "Old records stay in their partitions while new ones for the same key may go elsewhere. Size partitions generously up front."
+  },
+  {
+    "q": "Can you reduce the number of partitions of an existing topic?",
+    "options": ["No, only by creating a new topic and migrating", "Yes, with kafka-topics --alter", "Yes, but only when it's empty", "Yes, compaction merges partitions"],
+    "answer": 0,
+    "explain": "Partitions can only be added."
+  },
+  {
+    "q": "What is the ISR?",
+    "options": ["The set of replicas fully caught up with the partition leader", "Internal Schema Registry", "The list of all brokers", "In-flight send requests"],
+    "answer": 0,
+    "explain": "Only ISR members can become leader cleanly. A replica falling behind longer than `replica.lag.time.max.ms` is removed from the ISR."
+  },
+  {
+    "q": "What replaced ZooKeeper for Kafka cluster metadata?",
+    "options": ["KRaft, Kafka's built-in Raft-based controller quorum", "etcd", "Consul", "Nothing: ZooKeeper is still required"],
+    "answer": 0,
+    "explain": "KRaft became production-ready in 3.3, and Kafka 4.0 removed ZooKeeper mode entirely."
+  },
+  {
+    "q": "What is a dead letter topic for?",
+    "options": ["Holding records that keep failing after retries, so the main flow continues and they can be inspected", "Storing deleted topics", "Records with null keys", "Compacted tombstones"],
+    "answer": 0,
+    "explain": "Add headers with the error and origin (Spring's DeadLetterPublishingRecoverer does), monitor the DLT, and have a way to replay it."
+  },
+  {
+    "q": "What's the trade-off of non-blocking retries via retry topics (`@RetryableTopic`)?",
+    "options": ["The partition keeps flowing, but ordering between the failed record and later ones is lost", "They block the partition", "They lose messages", "They require transactions"],
+    "answer": 0,
+    "explain": "A failed record is moved to a retry topic while newer records continue. Fine for independent events, wrong for strictly ordered ones (account balance changes)."
+  },
+  {
+    "q": "A record that can't be deserialized keeps failing on every poll. How do you handle it in Spring Kafka?",
+    "options": ["Wrap the deserializer with ErrorHandlingDeserializer so the error reaches the error handler (and the DLT)", "Restart the consumer", "Increase max.poll.records", "Delete the topic"],
+    "answer": 0,
+    "explain": "Without it, the exception happens inside poll() before your listener, and the consumer loops on the same offset."
+  },
+  {
+    "q": "A brand-new consumer group with `auto.offset.reset=earliest` starts. Where does it read from?",
+    "options": ["The beginning of the retained log for each partition", "Only new records", "The middle of the log", "Where the previous group stopped"],
+    "answer": 0,
+    "explain": "It applies only when there's no committed offset for the group. `latest` would start from new records only."
+  },
+  {
+    "q": "What's the core difference between Kafka and RabbitMQ?",
+    "options": ["Kafka is a retained, replayable log with consumer-tracked offsets; RabbitMQ deletes messages after acknowledgment", "RabbitMQ can't persist messages", "Kafka supports routing keys and exchanges", "There's no real difference"],
+    "answer": 0,
+    "explain": "Kafka suits event streaming, replay and high throughput; RabbitMQ suits task queues with complex routing, priorities and per-message TTL."
+  },
+  {
+    "q": "How do you make an order-payment consumer safe against duplicate deliveries?",
+    "options": ["Make processing idempotent, e.g. record processed event ids under a unique constraint in the same DB transaction", "Use acks=all", "Disable retries", "Use a single partition"],
+    "answer": 0,
+    "explain": "At-least-once delivery is the norm, so duplicates will happen. Dedupe by event id, or rely on business state (an already-paid order is a no-op)."
+  },
+  {
+    "q": "What does increasing `linger.ms` on the producer do?",
+    "options": ["Waits longer to fill batches: better throughput and compression, slightly higher latency", "Increases retention", "Retries failed sends longer", "Slows down consumers"],
+    "answer": 0,
+    "explain": "Since Kafka 4.0 the default is 5 ms (it was 0). Even a few milliseconds of lingering can multiply throughput."
+  },
+  {
+    "q": "Are Kafka records deleted after a consumer reads them?",
+    "options": ["No: they stay until retention (time/size) or compaction removes them", "Yes, immediately", "Yes, after all groups read them", "Only if auto-commit is on"],
+    "answer": 0,
+    "explain": "That's what makes replay, new consumers and reprocessing after bugs possible."
+  },
+  {
+    "q": "What does `isolation.level=read_committed` change for a consumer?",
+    "options": ["It only returns records from committed transactions, skipping aborted ones", "It only reads replicated records", "It reads records in commit order across partitions", "It waits for consumer offsets to be committed"],
+    "answer": 0,
+    "explain": "The default `read_uncommitted` would also return records from transactions that later abort."
+  }
+]

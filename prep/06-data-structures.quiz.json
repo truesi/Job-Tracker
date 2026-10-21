@@ -1,0 +1,152 @@
+[
+  {
+    "q": "What's the time complexity of binary search on a sorted array?",
+    "options": ["O(log n)", "O(n)", "O(1)", "O(n log n)"],
+    "answer": 0,
+    "explain": "Each step halves the search range: about log₂(n) steps, so ~30 for a billion elements."
+  },
+  {
+    "q": "What is the lower bound for any comparison-based sort?",
+    "options": ["Ω(n log n)", "Ω(n)", "Ω(log n)", "Ω(n²)"],
+    "answer": 0,
+    "explain": "There are n! orderings and each comparison gives one bit, so you need log₂(n!) ≈ n log n comparisons. Counting and radix sort avoid comparisons."
+  },
+  {
+    "q": "When does quicksort hit its O(n²) worst case?",
+    "options": ["When pivots are consistently the smallest or largest element, e.g. sorted input with a first-element pivot", "When the array has many duplicates only", "On random input", "Never: quicksort is always O(n log n)"],
+    "answer": 0,
+    "explain": "Bad pivots split n into 0 and n-1. Random or median-of-three pivots make this practically impossible."
+  },
+  {
+    "q": "You need a stable sort with guaranteed O(n log n). Memory isn't a concern. Which one?",
+    "options": ["Merge sort", "Quicksort", "Heapsort", "Selection sort"],
+    "answer": 0,
+    "explain": "Merge sort is stable and always O(n log n), at the cost of O(n) extra memory. Heapsort is O(n log n) but not stable."
+  },
+  {
+    "q": "How do you detect a cycle in a singly linked list with O(1) extra memory?",
+    "options": ["Floyd's algorithm: slow and fast pointers meet if there's a cycle", "Store visited nodes in a HashSet", "Reverse the list and compare", "Count nodes until a limit"],
+    "answer": 0,
+    "explain": "The fast pointer moves 2 steps, the slow 1. In a cycle the fast one catches up. A HashSet works too, but costs O(n) memory."
+  },
+  {
+    "q": "Shortest path (fewest edges) in an unweighted graph?",
+    "options": ["BFS", "DFS", "Dijkstra with a heap", "Topological sort"],
+    "answer": 0,
+    "explain": "BFS visits nodes in order of distance, so the first time it reaches a node is via a shortest path. O(V + E)."
+  },
+  {
+    "q": "Shortest paths in a weighted graph with non-negative weights?",
+    "options": ["Dijkstra", "BFS", "Bellman-Ford is the only option", "DFS"],
+    "answer": 0,
+    "explain": "Dijkstra with a binary heap runs in O((V + E) log V). Negative weights break its greedy assumption."
+  },
+  {
+    "q": "A graph has some negative edge weights (no negative cycles). Which algorithm finds shortest paths?",
+    "options": ["Bellman-Ford", "Dijkstra", "BFS", "Prim"],
+    "answer": 0,
+    "explain": "Bellman-Ford relaxes all edges V-1 times, O(V·E). One more round that still improves something detects a negative cycle."
+  },
+  {
+    "q": "You need to order build tasks so each runs after its dependencies. What do you use?",
+    "options": ["Topological sort", "BFS shortest path", "Minimum spanning tree", "Binary search"],
+    "answer": 0,
+    "explain": "Kahn's algorithm repeatedly takes nodes with in-degree 0. If nodes remain at the end, there's a dependency cycle."
+  },
+  {
+    "q": "What does an in-order traversal of a binary search tree produce?",
+    "options": ["Keys in sorted order", "Keys level by level", "The root first, then children", "Keys in insertion order"],
+    "answer": 0,
+    "explain": "Left subtree, node, right subtree, which matches the BST ordering. A common check for \"is this a valid BST\"."
+  },
+  {
+    "q": "You insert 1, 2, 3, ..., n into a plain (unbalanced) BST. What is the search cost?",
+    "options": ["O(n): the tree degenerates into a list", "O(log n)", "O(1)", "O(n log n)"],
+    "answer": 0,
+    "explain": "Each key becomes the right child of the previous one. Self-balancing trees (AVL, red-black) prevent this."
+  },
+  {
+    "q": "Why do databases use B+trees instead of binary trees for indexes?",
+    "options": ["High fan-out means few levels, so few disk page reads, and linked leaves make range scans fast", "B+trees use less CPU per comparison", "Binary trees can't store strings", "B+trees never need rebalancing"],
+    "answer": 0,
+    "explain": "A node is a page with hundreds of keys, so 3–4 levels hold hundreds of millions of rows. A binary tree would need ~27 levels, each a potential disk read."
+  },
+  {
+    "q": "What is the complexity of building a heap from an unsorted array of n elements (heapify)?",
+    "options": ["O(n)", "O(n log n)", "O(log n)", "O(n²)"],
+    "answer": 0,
+    "explain": "Sifting down from the bottom up costs little for most nodes, since most are near the leaves. The sum converges to O(n). Inserting elements one by one would be O(n log n)."
+  },
+  {
+    "q": "You need the 10 largest values from a stream of 1 billion numbers. Best approach?",
+    "options": ["A min-heap of size 10: O(n log k)", "Sort everything: O(n log n)", "A max-heap of all elements", "A hash set of all values"],
+    "answer": 0,
+    "explain": "Keep a min-heap of the best k; when it exceeds k, drop the smallest. Memory O(k), and it works on a stream."
+  },
+  {
+    "q": "A Bloom filter says \"contains\". What does that mean?",
+    "options": ["The element is probably present; false positives are possible", "The element is definitely present", "The element is definitely absent", "The filter is full"],
+    "answer": 0,
+    "explain": "A \"no\" is always correct (no false negatives). It's used to skip expensive lookups, as in Cassandra/RocksDB SSTables or caches."
+  },
+  {
+    "q": "How do you implement an LRU cache with O(1) get and put?",
+    "options": ["A hash map plus a doubly linked list", "A sorted array", "A min-heap ordered by access time", "A single hash map"],
+    "answer": 0,
+    "explain": "The map finds the node in O(1), and the list moves it to the front or evicts the tail in O(1). Java's LinkedHashMap is exactly this."
+  },
+  {
+    "q": "What's the cost of looking up a word in a trie?",
+    "options": ["O(L), where L is the word length", "O(log n), where n is the number of words", "O(n)", "O(1) always"],
+    "answer": 0,
+    "explain": "One node per character, independent of how many words are stored. Prefix queries (autocomplete) come for free."
+  },
+  {
+    "q": "Which structure checks if parentheses like `({[]})` are balanced?",
+    "options": ["A stack", "A queue", "A heap", "A hash map alone"],
+    "answer": 0,
+    "explain": "Push opening brackets; on a closing one, pop and check it matches. At the end the stack must be empty."
+  },
+  {
+    "q": "Maximum sum of any subarray of fixed length k in an array of n numbers. Best complexity?",
+    "options": ["O(n) with a sliding window", "O(n·k) is optimal", "O(n log n) with sorting", "O(n²)"],
+    "answer": 0,
+    "explain": "Add the new element and subtract the one leaving the window: each step is O(1)."
+  },
+  {
+    "q": "Two-sum on an unsorted array: find two numbers adding to a target. Best time complexity?",
+    "options": ["O(n) with a hash map of seen values", "O(n log n) is optimal", "O(n²) is optimal", "O(log n)"],
+    "answer": 0,
+    "explain": "For each x, check whether target - x was already seen, then store x. With a sorted array, two pointers do it in O(n) with O(1) memory."
+  },
+  {
+    "q": "What's wrong with `int mid = (lo + hi) / 2;` in binary search?",
+    "options": ["lo + hi can overflow int for large indexes", "Integer division rounds the wrong way", "Nothing, it's always correct", "It's slower than shifting"],
+    "answer": 0,
+    "explain": "This exact bug lived in the JDK's `Arrays.binarySearch` for years. Use `lo + (hi - lo) / 2` or `(lo + hi) >>> 1`."
+  },
+  {
+    "q": "What distinguishes dynamic programming from plain divide and conquer?",
+    "options": ["Overlapping subproblems whose results are stored and reused", "DP always uses recursion", "DP only works on graphs", "Divide and conquer needs more memory"],
+    "answer": 0,
+    "explain": "Merge sort's halves are independent (divide and conquer). Fibonacci's subproblems repeat, so caching them turns O(2ⁿ) into O(n)."
+  },
+  {
+    "q": "\"ArrayList.add is O(1) amortized.\" What does that mean?",
+    "options": ["An occasional add costs O(n) for a resize, but the average over many adds is O(1)", "Every add is O(1) in the worst case", "Adds are O(1) only for small lists", "It's O(1) on average for random input"],
+    "answer": 0,
+    "explain": "Doubling (or ×1.5) the capacity means n adds cause O(n) copying in total. Amortized is a guarantee over a sequence, not a probability."
+  },
+  {
+    "q": "Best representation for a sparse graph with 1M vertices and 3M edges?",
+    "options": ["An adjacency list", "An adjacency matrix", "An edge-weight matrix", "A single sorted array of vertices"],
+    "answer": 0,
+    "explain": "A list takes O(V + E) memory. A matrix would need 10¹² cells."
+  },
+  {
+    "q": "Time complexity of naive recursive Fibonacci, `fib(n) = fib(n-1) + fib(n-2)`?",
+    "options": ["Exponential, about O(2ⁿ)", "O(n)", "O(n²)", "O(log n)"],
+    "answer": 0,
+    "explain": "The same values are recomputed many times. Memoization or a bottom-up loop makes it O(n) (and O(1) memory with two variables)."
+  }
+]

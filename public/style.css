@@ -170,3 +170,32 @@ form.inline { display: inline; }
 .plain { list-style: none; padding: 0; margin: 0 0 12px; }
 .result { background: var(--bg); padding: 10px; border-radius: 6px; font-size: 12px; white-space: pre-wrap; }
 summary { cursor: pointer; color: var(--muted); }
+
+.prep-page { max-width: 860px; }
+.notes { font-size: 15px; line-height: 1.6; }
+.notes h1 { margin-bottom: 8px; }
+.notes h2 { font-size: 17px; margin: 24px 0 8px; padding-top: 12px; border-top: 1px solid var(--border); scroll-margin-top: 64px; }
+.notes h3 { font-size: 15px; margin: 18px 0 6px; }
+.notes table { border-collapse: collapse; margin: 8px 0 12px; font-size: 14px; }
+.notes th, .notes td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; vertical-align: top; }
+.notes th { background: var(--bg); }
+.deep-link { font-size: 12px; font-weight: 400; margin-left: 8px; }
+.notes ul { padding-left: 20px; }
+.notes li { margin: 3px 0; }
+.notes pre, .pq pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; overflow-x: auto; }
+.notes pre code, .pq pre code { background: none; padding: 0; font-size: 13px; }
+
+.pq-head { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.pq-q { font-size: 16px; font-weight: 600; }
+.pq-options { display: grid; gap: 8px; margin: 12px 0; }
+.pq-opt { display: flex; gap: 10px; align-items: baseline; text-align: left; font: inherit; font-size: 15px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; cursor: pointer; }
+.pq-opt b { color: var(--muted); }
+.pq-opt:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+.pq-opt:disabled { cursor: default; }
+.pq-opt.pq-right { border-color: var(--ok); background: var(--ok-soft); }
+.pq-opt.pq-wrong { border-color: var(--bad); background: var(--bad-soft); }
+.pq-explain { background: var(--bg); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; }
+.pq-missed { border-top: 1px solid var(--border); padding-top: 8px; margin-bottom: 8px; }
+.lang-switch { display: inline-flex; gap: 2px; }
+.lang-switch a { padding: 3px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; color: var(--muted); }
+.lang-switch a.active, .lang-switch a:hover { background: var(--accent-soft); color: var(--accent); text-decoration: none; }

@@ -1,0 +1,17 @@
+<%- include('partials/header') %>
+<div class="prep-page">
+<div class="page-head">
+  <a href="/prep">← Все темы</a>
+  <div class="btn-row">
+    <span class="muted small"><%= topics.length > 3 ? `Тем: ${topics.length}` : topics.map((t) => t.title).join(', ') %></span>
+    <%- include('partials/prep-lang') %>
+  </div>
+</div>
+<% if (!questions.length) { %>
+<p class="muted">В выбранных темах пока нет вопросов.</p>
+<% } else { %>
+<section id="prep-quiz" class="card pq" data-n="<%= n %>"></section>
+<script type="application/json" id="prep-quiz-data"><%- JSON.stringify(questions).replace(/</g, '\\u003c') %></script>
+<% } %>
+</div>
+<%- include('partials/footer') %>

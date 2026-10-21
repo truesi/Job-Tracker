@@ -1,0 +1,156 @@
+[
+  {
+    "q": "A Java method `getName()` returns null. What happens in Kotlin?",
+    "code": "val name: String = javaUser.getName()",
+    "options": ["NullPointerException right at the assignment", "name becomes null", "Compile error", "IllegalArgumentException later when name is used"],
+    "answer": 0,
+    "explain": "`getName()` has the platform type `String!`. Assigning it to a non-null `String` makes the compiler insert a null check. Declare `String?` when Java can return null."
+  },
+  {
+    "q": "What does `val len = name?.length ?: 0` do?",
+    "options": ["If name is null, len is 0; otherwise its length", "Throws if name is null", "Always 0", "Compile error"],
+    "answer": 0,
+    "explain": "`?.` returns null instead of calling on null, and the Elvis operator `?:` supplies a default for null."
+  },
+  {
+    "q": "What does `name!!.length` do when `name` is null?",
+    "options": ["Throws NullPointerException", "Returns 0", "Returns null", "Compile error"],
+    "answer": 0,
+    "explain": "`!!` asserts non-null. Every `!!` in code review deserves a question: is there really no better way?"
+  },
+  {
+    "q": "A Kotlin Spring `@Service` class with a `@Transactional` method silently runs without transactions. Most likely cause?",
+    "options": ["Kotlin classes and methods are final by default, so CGLIB can't override them; apply the kotlin-spring plugin", "Kotlin doesn't support annotations", "Spring doesn't support Kotlin", "@Transactional requires suspend"],
+    "answer": 0,
+    "explain": "The all-open plugin (kotlin-spring) opens classes annotated with Spring stereotypes and @Transactional. start.spring.io adds it automatically."
+  },
+  {
+    "q": "What does a Kotlin `data class` generate?",
+    "options": ["equals, hashCode, toString, copy and componentN from primary constructor properties", "Getters only", "A builder and a no-arg constructor", "Serialization code"],
+    "answer": 0,
+    "explain": "Properties declared in the class body don't take part in equals/hashCode/toString."
+  },
+  {
+    "q": "Why is a `data class` a poor fit for a JPA entity?",
+    "options": ["Generated equals/hashCode/toString use all properties, including mutable ids and lazy associations; plus final and no no-arg constructor", "JPA can't map Kotlin properties", "Data classes can't have annotations", "Data classes are immutable"],
+    "answer": 0,
+    "explain": "Use a regular class (opened by kotlin-jpa/all-open), with deliberate equals/hashCode."
+  },
+  {
+    "q": "What's the difference between `==` and `===` in Kotlin?",
+    "options": ["== calls equals (null-safe); === compares references", "== compares references; === calls equals", "They're the same", "=== is for primitives only"],
+    "answer": 0,
+    "explain": "`a == b` compiles to `a?.equals(b) ?: (b === null)`. That's the opposite of Java's `==` habit."
+  },
+  {
+    "q": "An extension function `fun Animal.speak()` and `fun Dog.speak()` both exist. Which runs for `val a: Animal = Dog(); a.speak()`?",
+    "options": ["Animal.speak: extensions are resolved by the declared type", "Dog.speak: dynamic dispatch", "Compile error: ambiguous", "Both"],
+    "answer": 0,
+    "explain": "Extensions are static functions with a receiver parameter; there's no virtual dispatch. Member functions always win over extensions with the same signature."
+  },
+  {
+    "q": "Which scope function configures an object and returns the object itself?",
+    "code": "val client = HttpClient()._____ {\n    timeout = 5_000\n    retries = 3\n}",
+    "options": ["apply", "let", "run", "with"],
+    "answer": 0,
+    "explain": "`apply` uses `this` and returns the receiver. `also` returns the receiver too but uses `it`, which fits side effects like logging."
+  },
+  {
+    "q": "Is a Kotlin `List<String>` immutable?",
+    "options": ["No: it's a read-only interface; the underlying object may be mutable", "Yes, always", "Only when created with listOf", "Only inside data classes"],
+    "answer": 0,
+    "explain": "A `MutableList` can be passed as `List` and still changed by whoever holds the mutable reference. True immutability needs kotlinx.collections.immutable or defensive copies."
+  },
+  {
+    "q": "What is the default thread-safety mode of `by lazy { ... }`?",
+    "options": ["SYNCHRONIZED: the initializer runs at most once even with concurrent access", "NONE: not thread-safe", "PUBLICATION: may run several times", "It depends on the dispatcher"],
+    "answer": 0,
+    "explain": "Pass `LazyThreadSafetyMode.NONE` for single-threaded code to skip the locking."
+  },
+  {
+    "q": "What happens when a `lateinit var` is read before being assigned?",
+    "options": ["UninitializedPropertyAccessException", "It returns null", "It returns a default value", "Compile error"],
+    "answer": 0,
+    "explain": "Check with `::prop.isInitialized`. lateinit only works with non-null, non-primitive types on var properties."
+  },
+  {
+    "q": "How do `launch` and `async` differ?",
+    "options": ["launch returns a Job without a result; async returns a Deferred whose result you get with await()", "async blocks the thread; launch doesn't", "launch runs on IO, async on Default", "They're aliases"],
+    "answer": 0,
+    "explain": "Use async for concurrent computations whose results you combine: `val a = async { f() }; val b = async { g() }; a.await() + b.await()`."
+  },
+  {
+    "q": "A Spring WebFlux handler calls `runBlocking { service.load() }`. What's the problem?",
+    "options": ["It blocks the event-loop thread until done, which can stall the whole server", "runBlocking doesn't compile in Spring", "It runs the code twice", "Nothing"],
+    "answer": 0,
+    "explain": "runBlocking bridges blocking and suspending worlds for main functions and tests. In a suspend-capable framework, make the handler itself `suspend`."
+  },
+  {
+    "q": "Which dispatcher should wrap a blocking JDBC call made from a coroutine?",
+    "options": ["Dispatchers.IO", "Dispatchers.Default", "Dispatchers.Unconfined", "Dispatchers.Main"],
+    "answer": 0,
+    "explain": "IO allows many threads to block at once. Blocking on Default (sized to CPU cores) starves CPU-bound coroutines."
+  },
+  {
+    "q": "Inside `coroutineScope { }`, one of three child coroutines throws. What happens?",
+    "options": ["The other children are cancelled and the exception is rethrown from coroutineScope", "The other children continue; the error is logged", "The exception is ignored", "Only that child is retried"],
+    "answer": 0,
+    "explain": "That's structured concurrency: one failure fails the whole unit of work. Use supervisorScope when children should be independent."
+  },
+  {
+    "q": "When do you use `supervisorScope`?",
+    "options": ["When a child's failure shouldn't cancel its siblings or the parent", "To run code on the main thread", "To make coroutines non-cancellable", "To increase parallelism"],
+    "answer": 0,
+    "explain": "For example, sending notifications to many users where one failure shouldn't stop the others. Each child then handles its own exceptions."
+  },
+  {
+    "q": "A coroutine runs `while (true) { compute() }` with no suspension calls. You cancel it. What happens?",
+    "options": ["It keeps running: cancellation is cooperative", "It stops immediately", "The thread is interrupted", "A CancellationException is thrown inside compute()"],
+    "answer": 0,
+    "explain": "Add `ensureActive()` or `yield()` in the loop, or check `isActive`."
+  },
+  {
+    "q": "What's wrong with this code?",
+    "code": "try {\n    repository.save(order)   // suspend fun\n} catch (e: Exception) {\n    log.warn(\"save failed\", e)\n}",
+    "options": ["It also catches CancellationException, swallowing cancellation", "suspend functions can't be called in try", "Exception doesn't catch anything in Kotlin", "Nothing"],
+    "answer": 0,
+    "explain": "The coroutine keeps running after it was cancelled. Rethrow CancellationException (or catch narrower exception types)."
+  },
+  {
+    "q": "What does \"Flow is cold\" mean?",
+    "options": ["The producer code runs only when collected, and anew for every collector", "Flows are slow", "Values are cached for late collectors", "A flow can only be collected once"],
+    "answer": 0,
+    "explain": "Like a Java Stream supplier: no collect, no work. StateFlow and SharedFlow are hot: they exist independently of collectors."
+  },
+  {
+    "q": "How do StateFlow and SharedFlow differ?",
+    "options": ["StateFlow always holds a current value and emits only distinct values; SharedFlow has configurable replay and suits one-off events", "SharedFlow is cold", "StateFlow can't be observed", "They're identical"],
+    "answer": 0,
+    "explain": "StateFlow = observable state (like a LiveData/BehaviorSubject). SharedFlow with replay = 0 suits events that shouldn't be redelivered."
+  },
+  {
+    "q": "What does `flowOn(Dispatchers.IO)` affect?",
+    "options": ["The context of operators upstream of it (before it in the chain)", "The collector's context", "The whole flow, upstream and downstream", "Only the next operator"],
+    "answer": 0,
+    "explain": "The collector keeps running in its own context. That's \"context preservation\": a flow never changes the collector's dispatcher."
+  },
+  {
+    "q": "How do you protect shared mutable state when the critical section contains suspend calls?",
+    "options": ["kotlinx.coroutines.sync.Mutex with withLock { }", "synchronized { }", "@Volatile", "Dispatchers.Default"],
+    "answer": 0,
+    "explain": "A suspension point inside synchronized is a compile error, and blocking a thread on a monitor would defeat coroutines. Mutex suspends instead of blocking."
+  },
+  {
+    "q": "How does the compiler implement a `suspend` function on the JVM?",
+    "options": ["An extra Continuation parameter and a state machine (continuation-passing style)", "A new thread per call", "A ThreadLocal stack", "Bytecode instrumentation at runtime"],
+    "answer": 0,
+    "explain": "Each suspension point is a state; local variables are saved in the continuation object so the function can resume later on any thread."
+  },
+  {
+    "q": "What happens here?",
+    "code": "coroutineScope {\n    val d = async { error(\"boom\") }\n    delay(10_000)\n    println(d.await())\n}",
+    "options": ["The scope fails right away with \"boom\", cancelling the delay; await is never reached", "\"boom\" is thrown after 10 seconds at await", "Nothing happens: the exception is lost", "It prints null"],
+    "answer": 0,
+    "explain": "An async child's failure cancels its parent scope immediately, even before await. Only with a supervisor would the exception wait for await()."
+  }
+]

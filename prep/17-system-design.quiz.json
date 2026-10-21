@@ -1,0 +1,152 @@
+[
+  {
+    "q": "A service handles 1 million requests per day. What's the average request rate?",
+    "options": ["About 12 per second", "About 1,000 per second", "About 120 per second", "About 1 per second"],
+    "answer": 0,
+    "explain": "1,000,000 / 86,400 ≈ 11.6. Peaks are often 2–10× the average, so design for the peak."
+  },
+  {
+    "q": "How does the cache-aside pattern work?",
+    "options": ["The app reads from the cache; on a miss it loads from the DB and puts the result in the cache", "The cache loads from the DB by itself on a miss", "Every write goes to the cache, which writes to the DB later", "The DB pushes changes into the cache"],
+    "answer": 0,
+    "explain": "It's the most common pattern (e.g. Spring @Cacheable). On writes, update the DB and then evict the cache entry."
+  },
+  {
+    "q": "A hot cache key expires and thousands of requests hit the database at once. What's this called, and what helps?",
+    "options": ["Cache stampede; request coalescing/locking, jittered TTLs, stale-while-revalidate", "Cache poisoning; encrypt keys", "Thundering herd on writes; use write-behind", "Cold start; add more replicas"],
+    "answer": 0,
+    "explain": "Let one request recompute the value while others wait or serve the stale value; spread expirations with random jitter."
+  },
+  {
+    "q": "A dependency starts failing, and all clients retry immediately 3 times. What's the risk, and the fix?",
+    "options": ["A retry storm that multiplies load on the struggling service; use exponential backoff with jitter, retry budgets and a circuit breaker", "Nothing: retries always help", "Lost data; use acks=all", "Deadlocks; use a lock"],
+    "answer": 0,
+    "explain": "Retries at each layer multiply (3 layers × 3 retries = 27 calls). Jitter spreads them out, and a breaker stops calls entirely while the dependency recovers."
+  },
+  {
+    "q": "What are the states of a circuit breaker?",
+    "options": ["Closed, open, half-open", "Active, passive, standby", "Green, yellow, red", "Connected, disconnected"],
+    "answer": 0,
+    "explain": "Closed: calls pass and failures are counted. Open: calls fail fast. Half-open: a few trial calls decide whether to close again."
+  },
+  {
+    "q": "A client times out on `POST /payments` and retries. How do you avoid charging twice?",
+    "options": ["An idempotency key: the server stores it with the result and returns the stored result on a retry", "Never retry payments", "Use PUT instead of POST without other changes", "Lower the timeout"],
+    "answer": 0,
+    "explain": "The first request may have succeeded even though the client didn't get the response. Stripe-style Idempotency-Key headers solve this."
+  },
+  {
+    "q": "How does a token bucket rate limiter differ from a fixed-window counter?",
+    "options": ["Token bucket allows bursts up to its capacity with a steady average; fixed windows can let through 2× the limit around a window boundary", "Fixed window is more accurate", "Token bucket can't be distributed", "They behave the same"],
+    "answer": 0,
+    "explain": "With 100 requests per minute in fixed windows, a client can send 100 at 00:59 and 100 at 01:00. Sliding windows and token buckets avoid that spike."
+  },
+  {
+    "q": "Which HTTP status and header should a rate-limited request get?",
+    "options": ["429 Too Many Requests with Retry-After", "503 with Location", "403 Forbidden with no header", "400 Bad Request"],
+    "answer": 0,
+    "explain": "429 tells well-behaved clients to slow down, and Retry-After tells them when to try again."
+  },
+  {
+    "q": "Which HTTP methods are idempotent by definition?",
+    "options": ["GET, PUT, DELETE (and HEAD, OPTIONS)", "GET and POST", "POST and PATCH", "All of them"],
+    "answer": 0,
+    "explain": "Repeating an idempotent request has the same effect as sending it once. PATCH can be idempotent depending on the patch format, but isn't guaranteed to be."
+  },
+  {
+    "q": "What can an L7 load balancer do that an L4 one can't?",
+    "options": ["Route by HTTP path, host or headers, and terminate TLS", "Balance TCP connections", "Do health checks", "Use round robin"],
+    "answer": 0,
+    "explain": "L4 balancers see only IPs and ports: faster and protocol-agnostic. L7 balancers (Nginx, Envoy, ALB) understand HTTP."
+  },
+  {
+    "q": "Why should application servers be stateless?",
+    "options": ["Any instance can handle any request, so you can add, remove or replace instances freely", "Stateless servers use less CPU", "It's required by HTTP", "It removes the need for a database"],
+    "answer": 0,
+    "explain": "State (sessions, uploads, caches you rely on) goes to shared stores like Redis, a database or object storage."
+  },
+  {
+    "q": "A URL shortener uses 7-character base62 codes. Roughly how many codes are possible?",
+    "options": ["About 3.5 trillion", "About 78 billion", "About 10 million", "About 62 million"],
+    "answer": 0,
+    "explain": "62⁷ ≈ 3.5 × 10¹². Encoding a unique id (from a counter or Snowflake) avoids collisions without checking."
+  },
+  {
+    "q": "A URL shortener needs click analytics. Which redirect status should it use?",
+    "options": ["302 (temporary), so every click hits the service", "301 (permanent), for speed", "200 with HTML", "404"],
+    "answer": 0,
+    "explain": "Browsers cache 301s and skip the shortener on later clicks, losing analytics but saving load. That's a trade-off worth naming."
+  },
+  {
+    "q": "What's the problem with pure fan-out-on-write for a social news feed?",
+    "options": ["A post by a celebrity with millions of followers triggers millions of timeline writes", "Reads become slow", "Posts are lost", "It can't use a cache"],
+    "answer": 0,
+    "explain": "The usual answer is a hybrid: fan-out on write for normal users, and merge celebrity posts in at read time."
+  },
+  {
+    "q": "How should an infinite-scroll feed paginate?",
+    "options": ["With a cursor (the last seen id/timestamp)", "With page numbers and OFFSET", "Return everything at once", "Random sampling"],
+    "answer": 0,
+    "explain": "OFFSET gets slow and shows duplicates or gaps when new items arrive. A cursor stays fast and stable."
+  },
+  {
+    "q": "What is the bulkhead pattern?",
+    "options": ["Isolating resources (thread pools, connection limits) per dependency so one failing dependency can't exhaust everything", "Putting all services in one container", "Encrypting traffic between services", "Splitting the database by table"],
+    "answer": 0,
+    "explain": "Named after ship compartments: a leak floods one compartment, not the whole ship."
+  },
+  {
+    "q": "Why isn't a Redis lock with a TTL enough to protect a shared resource on its own?",
+    "options": ["The holder may pause (GC, network) past the TTL while another client takes the lock; fencing tokens checked by the resource prevent damage", "Redis can't store keys with TTLs", "Locks in Redis are always safe", "Because Redis is single-threaded"],
+    "answer": 0,
+    "explain": "Martin Kleppmann's analysis of Redlock: a monotonically increasing token, checked by the storage on each write, rejects the stale holder."
+  },
+  {
+    "q": "What's the difference between an SLO and an SLA?",
+    "options": ["An SLO is an internal reliability target; an SLA is a contract with consequences if it's missed", "They're the same", "An SLA is internal; an SLO is public", "An SLO measures cost"],
+    "answer": 0,
+    "explain": "SLOs are usually stricter than SLAs, so you notice and react before the contract is breached. The gap to 100% is the error budget."
+  },
+  {
+    "q": "How is money typically recorded in a payment or wallet system?",
+    "options": ["A double-entry ledger of immutable entries that sum to zero per transaction", "A balance column updated in place", "A log file", "A cache of balances"],
+    "answer": 0,
+    "explain": "Each movement debits one account and credits another. Balances are derived (or cached) from entries, which makes auditing and reconciliation possible."
+  },
+  {
+    "q": "What's the main risk of a write-behind (write-back) cache?",
+    "options": ["Data loss if the cache fails before it flushes to the database", "Slow writes", "Stale reads from the database", "It can't scale"],
+    "answer": 0,
+    "explain": "Writes are acknowledged once they're in the cache. Fast, but durability depends on the cache's own replication and persistence."
+  },
+  {
+    "q": "The server must push live updates to a browser; the client rarely sends anything. Simplest fit?",
+    "options": ["Server-Sent Events (SSE)", "WebSocket", "Short polling every 100 ms", "gRPC streaming from the browser"],
+    "answer": 0,
+    "explain": "SSE is plain HTTP, reconnects automatically and works through most proxies. WebSocket is for genuinely bidirectional traffic like chat."
+  },
+  {
+    "q": "How do you find the top 100 most frequent search terms over a huge stream with limited memory?",
+    "options": ["A count-min sketch for approximate counts plus a min-heap of the top candidates", "Store every term in a HashMap forever", "Sort the whole stream daily", "A Bloom filter"],
+    "answer": 0,
+    "explain": "Approximate counting with fixed memory is the standard answer; exact counts can be computed offline in batch if needed."
+  },
+  {
+    "q": "What does a CDN mainly do?",
+    "options": ["Serves static and cacheable content from edge locations close to users", "Stores the primary database", "Balances traffic between microservices", "Runs background jobs"],
+    "answer": 0,
+    "explain": "It cuts latency and offloads origin servers. Cache headers (`Cache-Control`, `ETag`) control what it may cache and for how long."
+  },
+  {
+    "q": "What do RED metrics stand for?",
+    "options": ["Rate, Errors, Duration", "Requests, Exceptions, Delay", "Reliability, Efficiency, Durability", "Read, Execute, Delete"],
+    "answer": 0,
+    "explain": "RED fits request-driven services. USE (Utilization, Saturation, Errors) fits resources like CPU, disks and connection pools."
+  },
+  {
+    "q": "Roughly how long is a round trip from Europe to the US West Coast?",
+    "options": ["About 150 ms", "About 1 ms", "About 15 ms", "About 1.5 s"],
+    "answer": 0,
+    "explain": "Light in fiber is limited. That's why chatty protocols across regions hurt, and why multi-region designs keep requests local."
+  }
+]

@@ -1,0 +1,140 @@
+[
+  {
+    "q": "Which type of dependency injection does the Spring team recommend for required dependencies?",
+    "options": ["Constructor injection", "Field injection with @Autowired", "Setter injection", "Lookup via ApplicationContext.getBean"],
+    "answer": 0,
+    "explain": "Dependencies become final and explicit, objects are fully initialized, and unit tests can pass mocks without Spring."
+  },
+  {
+    "q": "Two beans implement `PaymentService`, and a class injects `PaymentService` by constructor. Neither is marked. What happens?",
+    "options": ["NoUniqueBeanDefinitionException at startup (unless the parameter name matches a bean name)", "Spring picks the first one found", "Spring injects a composite of both", "Spring injects null"],
+    "answer": 0,
+    "explain": "Resolve with @Primary, @Qualifier, a matching parameter name, or inject `List<PaymentService>` to get all of them."
+  },
+  {
+    "q": "What's the default bean scope?",
+    "options": ["singleton", "prototype", "request", "session"],
+    "answer": 0,
+    "explain": "One instance per ApplicationContext, shared across threads, so singletons should be stateless."
+  },
+  {
+    "q": "A prototype-scoped bean is injected into a singleton's constructor. How many prototype instances does the singleton see over its life?",
+    "options": ["One: injection happens once", "A new one on each method call", "One per thread", "One per request"],
+    "answer": 0,
+    "explain": "Scope only matters when the container is asked for the bean. To get a new instance each time, inject `ObjectProvider<T>` and call `getObject()`, use `@Lookup`, or a scoped proxy."
+  },
+  {
+    "q": "When does a `@PostConstruct` method run?",
+    "options": ["After the bean is constructed and its dependencies are injected, before it's put into use", "Before the constructor", "When the context shuts down", "On first method call"],
+    "answer": 0,
+    "explain": "It's the place for initialization that needs injected dependencies. It runs on the target object, before AOP proxies are created, so @Transactional doesn't apply inside it."
+  },
+  {
+    "q": "At which point does Spring create AOP proxies (for @Transactional, @Async...)?",
+    "options": ["In BeanPostProcessor.postProcessAfterInitialization", "When the class is compiled", "In the bean's constructor", "In BeanFactoryPostProcessor"],
+    "answer": 0,
+    "explain": "An auto-proxy creator (itself a BeanPostProcessor) wraps the fully initialized bean, and the proxy is what other beans receive."
+  },
+  {
+    "q": "What's the difference between a BeanFactoryPostProcessor and a BeanPostProcessor?",
+    "options": ["BFPP modifies bean definitions before beans are created; BPP modifies or wraps bean instances", "They're the same thing", "BPP runs before BFPP", "BFPP is only for prototype beans"],
+    "answer": 0,
+    "explain": "PropertySourcesPlaceholderConfigurer (resolving `${...}`) is a BFPP; the AOP auto-proxy creator and @Autowired processing are BPPs."
+  },
+  {
+    "q": "Bean A's constructor needs B, and B's constructor needs A. What happens at startup?",
+    "options": ["BeanCurrentlyInCreationException: unresolvable circular reference", "Spring injects a proxy automatically", "One of them gets null", "It works because singletons are cached early"],
+    "answer": 0,
+    "explain": "With constructors there's no way to create either first. Setter/field injection used to \"work\" via early references, but Boot 2.6+ forbids cycles by default."
+  },
+  {
+    "q": "In a `@Configuration` class, `@Bean a()` calls `b()` and `@Bean c()` also calls `b()`. How many B instances exist?",
+    "options": ["One: the CGLIB proxy returns the existing singleton", "Two", "Three", "It depends on call order"],
+    "answer": 0,
+    "explain": "Full @Configuration classes are subclassed so @Bean methods go through the container. With `proxyBeanMethods = false` or in a @Component, you'd get two."
+  },
+  {
+    "q": "What does `@Repository` add compared to `@Component`?",
+    "options": ["Translation of persistence exceptions into Spring's DataAccessException hierarchy", "Automatic transactions", "Connection pooling", "Caching of query results"],
+    "answer": 0,
+    "explain": "A PersistenceExceptionTranslationPostProcessor wraps @Repository beans. Spring Data repositories get this automatically."
+  },
+  {
+    "q": "How do you get all beans that implement `NotificationChannel`?",
+    "options": ["Inject `List<NotificationChannel>` (or `Map<String, NotificationChannel>`)", "It's impossible with DI", "Call `getBean` in a loop", "Use @Qualifier(\"*\")"],
+    "answer": 0,
+    "explain": "The list is ordered by @Order/Ordered; the map is keyed by bean name. That's a clean strategy-pattern implementation."
+  },
+  {
+    "q": "Why prefer `@ConfigurationProperties` over many `@Value` annotations?",
+    "options": ["Type-safe binding of a whole group, relaxed names, validation, IDE metadata", "@Value is deprecated", "@ConfigurationProperties is faster at runtime", "@Value can't read environment variables"],
+    "answer": 0,
+    "explain": "One immutable record per config group, validated at startup with @Validated, beats `${...}` strings scattered across classes."
+  },
+  {
+    "q": "How does an `@EventListener` run by default?",
+    "options": ["Synchronously, in the publisher's thread and inside its transaction", "Asynchronously in a thread pool", "After the transaction commits", "In a separate transaction"],
+    "answer": 0,
+    "explain": "An exception in the listener propagates to the publisher. Use @Async for async handling, or @TransactionalEventListener to run after commit."
+  },
+  {
+    "q": "What's the difference between a servlet Filter and a Spring MVC HandlerInterceptor?",
+    "options": ["Filters run before the DispatcherServlet for every request; interceptors run inside MVC and know the target handler", "Interceptors run first", "Filters can only modify responses", "They're interchangeable"],
+    "answer": 0,
+    "explain": "Spring Security is a filter chain. Interceptors fit MVC concerns like locale or per-handler checks."
+  },
+  {
+    "q": "In Spring MVC, which component decides which controller method handles a request?",
+    "options": ["HandlerMapping", "ViewResolver", "HttpMessageConverter", "HandlerExceptionResolver"],
+    "answer": 0,
+    "explain": "`RequestMappingHandlerMapping` matches @RequestMapping metadata. A HandlerAdapter then invokes the method, and message converters write the result."
+  },
+  {
+    "q": "What is `@RestController`?",
+    "options": ["@Controller + @ResponseBody on every method", "A controller that only supports GET", "A controller with built-in validation", "A WebFlux-only annotation"],
+    "answer": 0,
+    "explain": "Return values are serialized (usually to JSON by Jackson) instead of being resolved as view names."
+  },
+  {
+    "q": "Is a singleton service bean thread-safe?",
+    "options": ["Only if it has no mutable shared state (or synchronizes it); Spring doesn't make it safe", "Yes, Spring synchronizes all bean methods", "Yes, each thread gets its own copy", "No, singletons can't be used from several threads"],
+    "answer": 0,
+    "explain": "All requests call the same instance concurrently. Keep per-request data in local variables or parameters, not fields."
+  },
+  {
+    "q": "Does Spring call `@PreDestroy` on prototype beans?",
+    "options": ["No: the container doesn't manage a prototype after handing it out", "Yes, at context shutdown", "Yes, when it's garbage collected", "Only if it implements DisposableBean"],
+    "answer": 0,
+    "explain": "The client code owns a prototype's lifecycle and must release its resources itself."
+  },
+  {
+    "q": "A `@RequestBody @Valid` DTO fails validation. What happens by default?",
+    "options": ["MethodArgumentNotValidException, resulting in a 400 response", "The controller is called with null", "A 500 Internal Server Error", "Validation is skipped"],
+    "answer": 0,
+    "explain": "Handle it in a @RestControllerAdvice to return field errors, for example as a ProblemDetail."
+  },
+  {
+    "q": "What does ApplicationContext add over a plain BeanFactory?",
+    "options": ["Eager singleton creation, events, AOP integration, i18n and environment/profiles", "Nothing: they're identical", "Only XML support", "Faster bean lookup"],
+    "answer": 0,
+    "explain": "BeanFactory is the core DI container. ApplicationContext is what applications actually use, and it fails fast on misconfiguration because singletons are created at startup."
+  },
+  {
+    "q": "One `PaymentService` is `@Primary`, and an injection point uses `@Qualifier(\"stripe\")`. Which bean is injected?",
+    "options": ["The \"stripe\" bean: the qualifier at the injection point wins", "The @Primary bean", "Startup fails with ambiguity", "Both, as a list"],
+    "answer": 0,
+    "explain": "@Primary is the default when nothing more specific is requested. A qualifier is an explicit request."
+  },
+  {
+    "q": "What does `@Lazy` on a singleton bean do?",
+    "options": ["The bean is created on first use instead of at startup", "The bean is created in a background thread", "All its dependencies become prototypes", "It disables the bean"],
+    "answer": 0,
+    "explain": "On an injection point, @Lazy injects a proxy that resolves the bean on first call, which is also a workaround for circular dependencies."
+  },
+  {
+    "q": "Where should you handle exceptions from many controllers in one place?",
+    "options": ["A @RestControllerAdvice with @ExceptionHandler methods", "A try/catch in every controller", "A servlet Filter only", "A BeanPostProcessor"],
+    "answer": 0,
+    "explain": "Spring 6 can also return RFC 9457 `ProblemDetail` bodies, and `ResponseEntityExceptionHandler` handles the standard MVC exceptions."
+  }
+]

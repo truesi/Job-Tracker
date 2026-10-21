@@ -1,0 +1,146 @@
+[
+  {
+    "q": "What is the default fetch type of `@ManyToOne` in JPA?",
+    "options": ["EAGER", "LAZY", "It depends on the provider", "SUBSELECT"],
+    "answer": 0,
+    "explain": "ToOne associations are EAGER by spec, ToMany are LAZY. Eager ToOne is a common hidden source of extra queries: declare `fetch = FetchType.LAZY` explicitly."
+  },
+  {
+    "q": "You load 50 orders with one query and then call `order.getCustomer().getName()` on each (customer is lazy). How many queries run?",
+    "options": ["Up to 51: the N+1 problem", "1", "2", "50"],
+    "answer": 0,
+    "explain": "Each uninitialized proxy triggers its own SELECT (fewer if orders share customers). Fix with JOIN FETCH, an entity graph, batch fetching or a DTO query."
+  },
+  {
+    "q": "What causes `LazyInitializationException`?",
+    "options": ["A lazy association is accessed after the persistence context (session) is closed", "The database is down", "An entity has no @Id", "Two threads use the same EntityManager"],
+    "answer": 0,
+    "explain": "Typically when an entity leaves a @Transactional service and a controller or JSON serializer touches a lazy field. Fetch what's needed inside the transaction, or return DTOs."
+  },
+  {
+    "q": "Inside a `@Transactional` method you load an entity and call a setter, without calling save(). What happens?",
+    "options": ["The change is written at flush/commit by dirty checking", "Nothing: you must call save()", "An exception is thrown", "The change is written immediately"],
+    "answer": 0,
+    "explain": "Managed entities are compared with their load-time snapshot at flush. Calling save() on a managed entity is redundant."
+  },
+  {
+    "q": "What does `entityManager.merge(detached)` return?",
+    "options": ["A managed instance carrying the detached object's state; the argument stays detached", "The same object, now managed", "void", "A new transient copy"],
+    "answer": 0,
+    "explain": "Keep using the returned instance. Changing the original object after merge has no effect."
+  },
+  {
+    "q": "What does `entityManager.getReference(Order.class, 42L)` do?",
+    "options": ["Returns a proxy without querying; accessing a missing entity later throws EntityNotFoundException", "Runs SELECT immediately and returns null if missing", "Creates a new Order with id 42", "Locks the row"],
+    "answer": 0,
+    "explain": "Useful to set a foreign key without loading the parent: `item.setOrder(em.getReference(Order.class, id))`."
+  },
+  {
+    "q": "Why does `GenerationType.IDENTITY` hurt bulk insert performance in Hibernate?",
+    "options": ["The id is only known after INSERT, so Hibernate inserts immediately and can't batch inserts", "IDENTITY columns are slow in all databases", "It locks the whole table", "It uses a separate id table"],
+    "answer": 0,
+    "explain": "With SEQUENCE and the pooled optimizer, Hibernate gets ids up front, delays the inserts until flush and sends them in JDBC batches."
+  },
+  {
+    "q": "In a bidirectional Order ↔ OrderItem association, you only call `order.getItems().add(item)` (Order has `mappedBy`). What's stored?",
+    "options": ["Nothing changes in order_id: the owning side (item.order) wasn't set", "The item is saved with the correct order_id", "Hibernate throws an exception", "A join table row is created"],
+    "answer": 0,
+    "explain": "Only the owning side (@ManyToOne with the FK) determines what's written. Write `addItem()` helpers that set both sides."
+  },
+  {
+    "q": "How does `orphanRemoval = true` differ from `CascadeType.REMOVE`?",
+    "options": ["orphanRemoval also deletes a child that's removed from the parent's collection", "They're identical", "orphanRemoval deletes the parent when the last child is removed", "CascadeType.REMOVE deletes children removed from the collection"],
+    "answer": 0,
+    "explain": "REMOVE cascades only when the parent itself is removed. orphanRemoval treats \"no longer in the collection\" as delete."
+  },
+  {
+    "q": "What's the risk of the default `@Enumerated` mapping?",
+    "options": ["It stores ORDINAL, so reordering or inserting enum constants corrupts existing data", "It stores names, which are too long", "It can't store null", "It requires a lookup table"],
+    "answer": 0,
+    "explain": "Use `@Enumerated(EnumType.STRING)` (or a converter with stable codes)."
+  },
+  {
+    "q": "`SELECT p FROM Post p JOIN FETCH p.comments JOIN FETCH p.tags` where both are `List`s. What happens?",
+    "options": ["MultipleBagFetchException", "Works, but slow", "Hibernate fetches tags lazily", "A syntax error"],
+    "answer": 0,
+    "explain": "Two bags in one join would create a Cartesian product that Hibernate can't de-duplicate safely. Use Sets (still a Cartesian product) or, better, fetch them in two queries."
+  },
+  {
+    "q": "A query with `JOIN FETCH p.comments` and `setMaxResults(20)`. What does Hibernate do?",
+    "options": ["Loads all matching rows and paginates in memory, logging a warning", "Applies LIMIT 20 in SQL correctly", "Throws an exception immediately", "Ignores the JOIN FETCH"],
+    "answer": 0,
+    "explain": "LIMIT on joined rows would cut a post's comments in half, so Hibernate fetches everything. Page the post ids first, then fetch with `WHERE p.id IN :ids`."
+  },
+  {
+    "q": "What's the scope of Hibernate's second-level cache?",
+    "options": ["The SessionFactory: shared across sessions and transactions; opt-in", "One EntityManager", "One HTTP request", "One thread"],
+    "answer": 0,
+    "explain": "It must be enabled and configured with a provider, and entities marked @Cacheable. The first-level cache is per EntityManager and always on."
+  },
+  {
+    "q": "In one transaction you call `em.find(User.class, 1L)` twice. How many SELECTs run?",
+    "options": ["One; the second call returns the same instance from the persistence context", "Two", "Zero, because of the second-level cache", "It depends on the isolation level"],
+    "answer": 0,
+    "explain": "The persistence context guarantees one instance per id per context (identity map)."
+  },
+  {
+    "q": "You run a bulk JPQL `UPDATE Product p SET p.price = p.price * 1.1` after loading some products in the same transaction. What do the loaded entities show?",
+    "options": ["The old prices: bulk updates bypass the persistence context", "The new prices automatically", "Hibernate throws an exception", "Their prices become null"],
+    "answer": 0,
+    "explain": "Bulk statements go straight to SQL. Clear the context afterwards (`@Modifying(clearAutomatically = true)`), and beware: a later flush of those stale entities can overwrite the new values."
+  },
+  {
+    "q": "Spring Data `repository.save(entity)` where the entity has a manually assigned id and no @Version. What happens?",
+    "options": ["It's treated as existing: merge runs a SELECT first, then INSERT", "It inserts directly", "It throws because the id is set", "It updates without checking"],
+    "answer": 0,
+    "explain": "SimpleJpaRepository decides new vs existing by `id == null`. Implement Persistable#isNew or add a @Version field to avoid the extra SELECT."
+  },
+  {
+    "q": "What's the default of `spring.jpa.open-in-view` in Spring Boot?",
+    "options": ["true, with a warning at startup", "false", "It doesn't exist anymore", "true only in tests"],
+    "answer": 0,
+    "explain": "Open Session In View keeps the EntityManager open during view rendering, so lazy loading works anywhere, while a DB connection is held for the whole request. Most teams disable it."
+  },
+  {
+    "q": "What can go wrong with Lombok `@Data` on a JPA entity?",
+    "options": ["Generated toString/equals/hashCode touch lazy associations: extra queries, LazyInitializationException, or StackOverflowError on bidirectional links", "Nothing", "Entities can't have getters", "Hibernate can't instantiate the class"],
+    "answer": 0,
+    "explain": "Generate only getters/setters, and write equals/hashCode deliberately (business key, or id with a constant hashCode)."
+  },
+  {
+    "q": "What does `hibernate.default_batch_fetch_size = 50` do?",
+    "options": ["Initializes lazy proxies or collections of up to 50 owners with one IN query", "Inserts 50 rows per JDBC batch", "Limits queries to 50 rows", "Caches 50 entities"],
+    "answer": 0,
+    "explain": "It turns N+1 into roughly N/50 + 1 queries without changing queries. JDBC write batching is a different setting: `hibernate.jdbc.batch_size`."
+  },
+  {
+    "q": "An entity with `@Version` was modified concurrently by another transaction. What happens on flush?",
+    "options": ["The UPDATE ... WHERE version = ? matches 0 rows, and an OptimisticLockException is thrown", "The last write silently wins", "Hibernate merges both changes", "The transaction waits for a lock"],
+    "answer": 0,
+    "explain": "Spring translates it to ObjectOptimisticLockingFailureException. Retry with fresh data or report a conflict to the user."
+  },
+  {
+    "q": "Which inheritance strategy usually gives the fastest polymorphic queries?",
+    "options": ["SINGLE_TABLE", "JOINED", "TABLE_PER_CLASS", "MappedSuperclass"],
+    "answer": 0,
+    "explain": "One table, no joins or unions. The trade-off: subclass columns must be nullable, so constraints are weaker."
+  },
+  {
+    "q": "Importing 1,000,000 rows with `persist` in one transaction runs out of memory. What's the fix?",
+    "options": ["flush() and clear() the EntityManager every batch_size entities", "Increase -Xmx only", "Use REQUIRES_NEW per row", "Disable dirty checking with readOnly"],
+    "answer": 0,
+    "explain": "Every persisted entity stays in the persistence context (and gets dirty-checked) until it's cleared. For really big loads, plain JDBC batches or COPY are faster still."
+  },
+  {
+    "q": "With FlushMode AUTO, you change a managed entity and then run a JPQL query on the same table. What does Hibernate do?",
+    "options": ["Flushes the pending change before running the query", "Runs the query, which then misses your change", "Throws an exception", "Rolls back the change"],
+    "answer": 0,
+    "explain": "AUTO flushes when pending changes could affect the query result. For native queries Hibernate may flush everything, since it can't tell which tables are involved."
+  },
+  {
+    "q": "An entity was loaded in an EntityManager that has since been closed. What state is it in?",
+    "options": ["Detached", "Managed", "Transient", "Removed"],
+    "answer": 0,
+    "explain": "Its changes are no longer tracked. Reattach them with merge (copying state onto a managed instance)."
+  }
+]

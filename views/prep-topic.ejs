@@ -1,0 +1,15 @@
+<%- include('partials/header') %>
+<div class="prep-page">
+<div class="page-head">
+  <div class="btn-row">
+    <a href="/prep">← Все темы</a>
+    <% if (deep) { %><a href="/prep/<%= topic.slug %>">Краткий конспект</a><% } else if (topic.deep) { %><a href="/prep/<%= topic.slug %>/deep">Подробно</a><% } %>
+  </div>
+  <div class="btn-row">
+    <%- include('partials/prep-lang') %>
+    <% if (topic.questions.length) { %><a class="btn" href="/prep/quiz?topics=<%= topic.slug %>">Квиз по теме</a><% } %>
+  </div>
+</div>
+<article class="card notes"><%- html %></article>
+</div>
+<%- include('partials/footer') %>

@@ -1,0 +1,152 @@
+[
+  {
+    "q": "Why does this fail in PostgreSQL?",
+    "code": "SELECT price * qty AS total\nFROM order_lines\nWHERE total > 100;",
+    "options": ["WHERE is evaluated before SELECT, so the alias doesn't exist yet", "Aliases can't contain arithmetic", "AS isn't allowed for computed columns", "total is a reserved word"],
+    "answer": 0,
+    "explain": "Repeat the expression in WHERE or wrap the query in a subquery. ORDER BY may use the alias because it runs after SELECT."
+  },
+  {
+    "q": "What's the difference between WHERE and HAVING?",
+    "options": ["WHERE filters rows before grouping; HAVING filters groups after aggregation", "HAVING is faster", "WHERE can't use AND/OR", "They are interchangeable"],
+    "answer": 0,
+    "explain": "Aggregates like `COUNT(*) > 5` only make sense in HAVING. Filters on plain columns belong in WHERE, so fewer rows get grouped."
+  },
+  {
+    "q": "A table has 10 rows; 3 have NULL in `email`. What do `COUNT(*)` and `COUNT(email)` return?",
+    "options": ["10 and 7", "10 and 10", "7 and 7", "10 and 3"],
+    "answer": 0,
+    "explain": "`COUNT(*)` counts rows; `COUNT(expr)` counts non-null values."
+  },
+  {
+    "q": "What does `SELECT * FROM users WHERE deleted_at = NULL;` return?",
+    "options": ["No rows, ever", "Rows where deleted_at is NULL", "All rows", "A syntax error"],
+    "answer": 0,
+    "explain": "Comparing with NULL gives UNKNOWN, and WHERE keeps only TRUE. Use `IS NULL`."
+  },
+  {
+    "q": "`blocked_users.user_id` contains one NULL. What does this return?",
+    "code": "SELECT * FROM users\nWHERE id NOT IN (SELECT user_id FROM blocked_users);",
+    "options": ["No rows", "All users that aren't blocked", "All users", "An error"],
+    "answer": 0,
+    "explain": "`id NOT IN (1, NULL)` means `id <> 1 AND id <> NULL`, which is UNKNOWN for every row. `NOT EXISTS` doesn't have this trap."
+  },
+  {
+    "q": "What happens to customers without any orders?",
+    "code": "SELECT c.name, o.id\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.id\nWHERE o.status = 'PAID';",
+    "options": ["They disappear: the WHERE turns it into an inner join", "They appear with NULL order columns", "They appear once with status NULL", "The query fails"],
+    "answer": 0,
+    "explain": "For unmatched customers `o.status` is NULL, so the WHERE condition isn't TRUE. Move `o.status = 'PAID'` into the ON clause."
+  },
+  {
+    "q": "Salaries are 100, 100, 90. What do RANK() and DENSE_RANK() give for 90 (ordering by salary DESC)?",
+    "options": ["RANK 3, DENSE_RANK 2", "RANK 2, DENSE_RANK 2", "RANK 3, DENSE_RANK 3", "RANK 2, DENSE_RANK 3"],
+    "answer": 0,
+    "explain": "RANK leaves gaps after ties; DENSE_RANK doesn't. ROW_NUMBER would give 1, 2, 3 with an arbitrary order for the ties."
+  },
+  {
+    "q": "Why prefer `UNION ALL` over `UNION` when duplicates are impossible or fine?",
+    "options": ["UNION removes duplicates with an extra sort or hash, which costs time", "UNION ALL sorts the result", "UNION fails on duplicates", "There's no difference"],
+    "answer": 0,
+    "explain": "UNION = UNION ALL + DISTINCT. On big results the deduplication step can dominate the query."
+  },
+  {
+    "q": "Which query gets the top 3 earners in each department?",
+    "options": ["ROW_NUMBER() OVER (PARTITION BY dept ORDER BY salary DESC) in a CTE, then WHERE rn <= 3", "GROUP BY dept ORDER BY salary DESC LIMIT 3", "SELECT MAX(salary) ... GROUP BY dept", "ORDER BY dept, salary DESC LIMIT 3"],
+    "answer": 0,
+    "explain": "LIMIT applies to the whole result, not per group. Use DENSE_RANK instead of ROW_NUMBER if ties at the boundary should all be included."
+  },
+  {
+    "q": "Which query correctly returns the second highest distinct salary (or NULL if there isn't one)?",
+    "options": ["SELECT MAX(salary) FROM emp WHERE salary < (SELECT MAX(salary) FROM emp)", "SELECT salary FROM emp ORDER BY salary DESC LIMIT 1 OFFSET 1", "SELECT MAX(salary) - 1 FROM emp", "SELECT salary FROM emp ORDER BY salary DESC LIMIT 2"],
+    "answer": 0,
+    "explain": "OFFSET 1 without DISTINCT returns the top salary again when two people share it, and returns no row (not NULL) when there's one employee."
+  },
+  {
+    "q": "How do you find email addresses that appear more than once?",
+    "options": ["GROUP BY email HAVING COUNT(*) > 1", "WHERE COUNT(email) > 1", "SELECT DISTINCT email", "ORDER BY email and compare neighbors in the app"],
+    "answer": 0,
+    "explain": "Aggregate conditions go in HAVING. To delete duplicates keeping one row, number them with ROW_NUMBER() OVER (PARTITION BY email ORDER BY id) and delete rn > 1."
+  },
+  {
+    "q": "How do you compute a running total of daily revenue?",
+    "options": ["SUM(revenue) OVER (ORDER BY day)", "SUM(revenue) GROUP BY day", "SUM(revenue) OVER (PARTITION BY day)", "CUMSUM(revenue)"],
+    "answer": 0,
+    "explain": "With ORDER BY and no explicit frame, the frame is from the start to the current row (RANGE, so equal `day` values are summed together)."
+  },
+  {
+    "q": "Why does `OFFSET 100000 LIMIT 20` get slow?",
+    "options": ["The database still produces and discards the 100,000 skipped rows", "OFFSET disables indexes", "LIMIT forces a full sort", "It locks the table"],
+    "answer": 0,
+    "explain": "Keyset pagination (`WHERE id < :lastSeen ORDER BY id DESC LIMIT 20`) jumps straight to the position through the index."
+  },
+  {
+    "q": "In PostgreSQL, how do TRUNCATE and DELETE (without WHERE) differ?",
+    "options": ["TRUNCATE empties the table at once without scanning rows; DELETE removes rows one by one", "TRUNCATE can't be rolled back in PostgreSQL", "DELETE resets identity sequences", "TRUNCATE fires row-level DELETE triggers"],
+    "answer": 0,
+    "explain": "TRUNCATE is transactional in PostgreSQL and much faster, but it takes an ACCESS EXCLUSIVE lock and doesn't fire ON DELETE row triggers."
+  },
+  {
+    "q": "There's a B-tree index on `created_at`. Why might this query not use it?",
+    "code": "SELECT * FROM orders\nWHERE DATE(created_at) = '2024-03-01';",
+    "options": ["The function on the column makes the predicate non-sargable", "DATE() is not supported in WHERE", "Indexes don't work with timestamps", "The literal must be a timestamp"],
+    "answer": 0,
+    "explain": "The index stores `created_at`, not `DATE(created_at)`. Use a range: `created_at >= '2024-03-01' AND created_at < '2024-03-02'`, or an expression index."
+  },
+  {
+    "q": "What does `LAG(amount) OVER (ORDER BY month)` return?",
+    "options": ["The previous row's amount (NULL for the first row)", "The next row's amount", "The difference from the previous row", "The amount of the first row"],
+    "answer": 0,
+    "explain": "Month-over-month change is `amount - LAG(amount) OVER (ORDER BY month)`. LEAD looks forward."
+  },
+  {
+    "q": "What is `WITH RECURSIVE` typically used for?",
+    "options": ["Walking hierarchies such as org charts or category trees", "Running a query in a loop until it's fast", "Creating temporary tables", "Retrying failed transactions"],
+    "answer": 0,
+    "explain": "An anchor query selects the root, and the recursive part joins children to the rows found so far, until no new rows appear."
+  },
+  {
+    "q": "Which query finds customers without orders and stays correct even if `orders.customer_id` contains NULLs?",
+    "options": ["NOT EXISTS (SELECT 1 FROM orders o WHERE o.customer_id = c.id)", "c.id NOT IN (SELECT customer_id FROM orders)", "c.id <> ALL (SELECT customer_id FROM orders)", "INNER JOIN orders o ON o.customer_id <> c.id"],
+    "answer": 0,
+    "explain": "NOT EXISTS evaluates to TRUE or FALSE only. A LEFT JOIN with `WHERE o.id IS NULL` is also correct."
+  },
+  {
+    "q": "What does PostgreSQL do with this query (`id` is the primary key of emp)?",
+    "code": "SELECT dept, name, COUNT(*)\nFROM emp\nGROUP BY dept;",
+    "options": ["Error: name must appear in GROUP BY or be used in an aggregate", "Returns an arbitrary name per department", "Returns all names concatenated", "Ignores name"],
+    "answer": 0,
+    "explain": "MySQL without ONLY_FULL_GROUP_BY used to return an arbitrary value. Grouping by the primary key would make `name` allowed (functional dependency)."
+  },
+  {
+    "q": "Ratings are 5, NULL, 3. What is `AVG(rating)`?",
+    "options": ["4", "2.67", "NULL", "An error"],
+    "answer": 0,
+    "explain": "Aggregates skip NULLs: (5 + 3) / 2. Use `AVG(COALESCE(rating, 0))` if NULL should count as zero."
+  },
+  {
+    "q": "Customers have many orders and many payments. What's wrong with this?",
+    "code": "SELECT c.id, SUM(p.amount)\nFROM customers c\nJOIN orders o   ON o.customer_id = c.id\nJOIN payments p ON p.customer_id = c.id\nGROUP BY c.id;",
+    "options": ["Each payment is counted once per order: the sum is multiplied", "Nothing", "SUM can't be used with two joins", "Customers without payments cause an error"],
+    "answer": 0,
+    "explain": "Joining two independent one-to-many tables gives orders × payments rows per customer. Aggregate each child table in its own subquery first, then join."
+  },
+  {
+    "q": "How do you insert a row or update it if the key already exists in PostgreSQL?",
+    "options": ["INSERT ... ON CONFLICT (key) DO UPDATE SET ...", "INSERT OR REPLACE", "UPSERT INTO", "REPLACE INTO"],
+    "answer": 0,
+    "explain": "ON CONFLICT is atomic and race-free. It needs a unique index or constraint on the conflict columns. `EXCLUDED.col` refers to the value you tried to insert."
+  },
+  {
+    "q": "Why can't you write `WHERE ROW_NUMBER() OVER (...) = 1`?",
+    "options": ["Window functions are computed after WHERE, in the SELECT step", "ROW_NUMBER requires GROUP BY", "It's allowed in PostgreSQL", "Window functions can only be used in ORDER BY"],
+    "answer": 0,
+    "explain": "Compute it in a subquery or CTE, then filter outside. Some databases offer QUALIFY for this; PostgreSQL doesn't."
+  },
+  {
+    "q": "`customers` has 100 rows, each with exactly 3 orders. How many rows does an INNER JOIN on customer_id return?",
+    "options": ["300", "100", "103", "30,000"],
+    "answer": 0,
+    "explain": "Each customer row is repeated once per matching order. A CROSS JOIN would give 100 × 300 = 30,000."
+  }
+]

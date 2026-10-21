@@ -1,0 +1,40 @@
+<%- include('partials/header') %>
+<div class="page-head"><h1>Подготовка к собеседованиям</h1><%- include('partials/prep-lang') %></div>
+
+<section class="card">
+  <h2>Квиз</h2>
+  <form method="get" action="/prep/quiz">
+    <div class="btn-row">
+      <% topics.forEach((t) => { %>
+      <label class="check"><input type="checkbox" name="topics" value="<%= t.slug %>" checked> <%= t.title %></label>
+      <% }) %>
+    </div>
+    <div class="btn-row mt">
+      <select name="n">
+        <% [10, 20, 30].forEach((n) => { %><option value="<%= n %>" <%= n === 20 ? 'selected' : '' %>><%= n %> вопросов</option><% }) %>
+      </select>
+      <button class="btn">Начать</button>
+      <button type="button" class="btn btn-ghost btn-sm" data-toggle-all>Снять / отметить все</button>
+    </div>
+  </form>
+</section>
+
+<section class="card">
+  <h2>Конспекты</h2>
+  <div class="table-wrap">
+  <table class="table">
+    <thead><tr><th>Тема</th><th></th><th class="num">Вопросов</th><th></th></tr></thead>
+    <tbody>
+    <% topics.forEach((t) => { %>
+      <tr>
+        <td><a class="v-title" href="/prep/<%= t.slug %>"><%= t.title %></a></td>
+        <td><% if (t.deep) { %><a href="/prep/<%= t.slug %>/deep">Подробно</a><% } %></td>
+        <td class="num"><%= t.questions.length %></td>
+        <td class="num"><% if (t.questions.length) { %><a href="/prep/quiz?topics=<%= t.slug %>">Квиз по теме</a><% } %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  </div>
+</section>
+<%- include('partials/footer') %>

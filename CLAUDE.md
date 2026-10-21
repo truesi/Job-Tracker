@@ -33,6 +33,9 @@ collector (Claude) -> data/inbox/*.json -> inbox.js (раз в INBOX_POLL_SECOND
   `rejected`/`withdrawn` не двигают воронку).
 - [src/routes/](src/routes/): `admin.js` (дашборд, профиль, настройки, API), `vacancies.js`, `applications.js`.
   Все формы обычные POST + redirect, JS на клиенте минимальный ([public/app.js](public/app.js)).
+- [src/routes/prep.js](src/routes/prep.js): подготовка к собеседованиям, без БД. Конспекты `prep/NN-slug.md`, разборы `prep/NN-slug.deep.md` (рендер `marked`)
+  и вопросы `prep/NN-slug.quiz.json`, формат в README. Русская версия в `prep/ru/` с теми же именами, язык из cookie `prep_lang`,
+  без файла на выбранном языке берётся английский. Меняешь английский контент, обнови и русский. Игра целиком на клиенте (блок `#prep-quiz` в `public/app.js`).
 - [src/format.js](src/format.js): русские подписи для enum-значений, доступны во вьюхах как `fmt`.
 
 ## Конфиг сборщика

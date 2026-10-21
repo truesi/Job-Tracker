@@ -1,0 +1,147 @@
+[
+  {
+    "q": "A `ThreadPoolExecutor` has core=2, max=10 and an unbounded `LinkedBlockingQueue`. You quickly submit 100 long tasks. How many threads run them?",
+    "options": ["2", "10", "100", "Between 2 and 10, depending on load"],
+    "answer": 0,
+    "explain": "Extra threads beyond core are created only when the queue rejects a task. An unbounded queue never fills, so the pool stays at 2 threads."
+  },
+  {
+    "q": "What does the default `RejectedExecutionHandler` of `ThreadPoolExecutor` do?",
+    "options": ["Throws RejectedExecutionException", "Runs the task in the caller's thread", "Silently drops the task", "Drops the oldest queued task"],
+    "answer": 0,
+    "explain": "The default is `AbortPolicy`. `CallerRunsPolicy`, `DiscardPolicy` and `DiscardOldestPolicy` must be chosen explicitly."
+  },
+  {
+    "q": "What is the effect of `CallerRunsPolicy` when the pool is saturated?",
+    "options": ["The submitting thread runs the task itself, slowing the producer down", "The task is retried later", "A new thread is created beyond max", "The task waits in a second queue"],
+    "answer": 0,
+    "explain": "While the caller is busy running the task, it can't submit more. That's simple backpressure without losing tasks."
+  },
+  {
+    "q": "What is the difference between `shutdown()` and `shutdownNow()`?",
+    "options": ["shutdown lets queued tasks finish; shutdownNow interrupts running ones and returns the queued ones", "shutdown waits for termination; shutdownNow doesn't", "They are identical, shutdownNow is deprecated", "shutdown interrupts tasks; shutdownNow kills threads"],
+    "answer": 0,
+    "explain": "Neither waits: use `awaitTermination` for that. `shutdownNow` relies on tasks reacting to interruption."
+  },
+  {
+    "q": "A task passed to `executor.submit()` throws an exception, and nobody calls `get()` on its Future. What happens?",
+    "options": ["The exception is silently lost", "It's printed by the default uncaught exception handler", "The executor shuts down", "The worker thread dies and is not replaced"],
+    "answer": 0,
+    "explain": "`submit` wraps the task in a `FutureTask`, which stores the exception. Only `execute()` lets it reach the uncaught exception handler."
+  },
+  {
+    "q": "A task scheduled with `scheduleAtFixedRate` throws an exception on its 5th run. What happens next?",
+    "options": ["All later runs are silently cancelled", "The exception is logged and the schedule continues", "The executor shuts down", "The task is retried immediately"],
+    "answer": 0,
+    "explain": "If any execution throws, subsequent executions are suppressed. Wrap the body in try/catch to keep a periodic task alive."
+  },
+  {
+    "q": "Where does `CompletableFuture.supplyAsync(supplier)` run without an executor argument?",
+    "options": ["ForkJoinPool.commonPool()", "A new thread per task", "The calling thread", "A cached thread pool"],
+    "answer": 0,
+    "explain": "The common pool is sized for CPU work (cores - 1). Blocking I/O there starves parallel streams and other async code, so pass your own executor."
+  },
+  {
+    "q": "`userId -> CompletableFuture<User>` is a call that itself returns a CompletableFuture. Which method chains it without getting `CompletableFuture<CompletableFuture<User>>`?",
+    "options": ["thenCompose", "thenApply", "thenCombine", "thenAccept"],
+    "answer": 0,
+    "explain": "`thenCompose` is flatMap for futures. `thenApply` would nest the result."
+  },
+  {
+    "q": "You have two independent futures, price and rate, and need price × rate. Which method?",
+    "options": ["thenCombine", "thenCompose", "allOf", "applyToEither"],
+    "answer": 0,
+    "explain": "`thenCombine` waits for both and applies a BiFunction. `allOf` returns `CompletableFuture<Void>`, so you'd have to join each future again."
+  },
+  {
+    "q": "How do `join()` and `get()` of CompletableFuture differ?",
+    "options": ["join throws unchecked CompletionException; get throws checked exceptions", "join doesn't block; get blocks", "join cancels on timeout; get doesn't", "They are aliases"],
+    "answer": 0,
+    "explain": "`get()` throws `ExecutionException` and `InterruptedException`. `join()` is handier inside lambdas and streams."
+  },
+  {
+    "q": "What happens on `concurrentHashMap.put(\"k\", null)`?",
+    "options": ["NullPointerException", "The key is mapped to null", "The key is removed", "IllegalArgumentException"],
+    "answer": 0,
+    "explain": "CHM forbids null keys and values: with concurrency, `get` returning null couldn't distinguish \"absent\" from \"mapped to null\"."
+  },
+  {
+    "q": "A thread iterates a ConcurrentHashMap while another thread adds entries. What happens?",
+    "options": ["No exception; the iterator may or may not see the new entries", "ConcurrentModificationException", "The iterator blocks writers until it finishes", "The iterator sees a full snapshot taken at creation"],
+    "answer": 0,
+    "explain": "CHM iterators are weakly consistent: they never throw CME and reflect some state at or after their creation."
+  },
+  {
+    "q": "What's wrong with this code on a ConcurrentHashMap?",
+    "code": "if (!map.containsKey(key)) {\n    map.put(key, createValue());\n}",
+    "options": ["Check-then-act race: two threads can both put; use computeIfAbsent", "Nothing: CHM methods are thread-safe", "containsKey is not supported by CHM", "It deadlocks"],
+    "answer": 0,
+    "explain": "Each call is atomic, but the pair isn't. `computeIfAbsent(key, k -> createValue())` does it atomically, calling the function at most once."
+  },
+  {
+    "q": "When is `CopyOnWriteArrayList` a good choice?",
+    "options": ["Many reads and iterations, rare writes (e.g. listeners)", "Write-heavy queues", "Large lists updated often", "When you need iterator.remove()"],
+    "answer": 0,
+    "explain": "Every write copies the whole array. In return, reads are lock-free and iterators work on a snapshot (and don't support remove)."
+  },
+  {
+    "q": "What is the key difference between `CountDownLatch` and `CyclicBarrier`?",
+    "options": ["A latch is one-shot and waits for events; a barrier is reusable and makes threads wait for each other", "A latch is reusable; a barrier is one-shot", "A barrier can be counted down from any thread; a latch can't", "There's no difference"],
+    "answer": 0,
+    "explain": "A latch can't be reset once it hits zero. A barrier resets after all parties arrive, and can run a barrier action each time."
+  },
+  {
+    "q": "What does `new Semaphore(3)` guarantee when threads `acquire()` before entering a section?",
+    "options": ["At most 3 threads are inside at once", "The section runs exactly 3 times", "Threads enter in groups of 3", "Only 3 threads can ever be created"],
+    "answer": 0,
+    "explain": "Each acquire takes a permit and blocks when none are left. Release in `finally`, or permits leak."
+  },
+  {
+    "q": "A thread holds the read lock of a `ReentrantReadWriteLock` and calls `writeLock().lock()`. What happens?",
+    "options": ["It blocks forever: lock upgrade isn't supported", "The read lock is upgraded to a write lock", "IllegalMonitorStateException", "The read lock is released automatically"],
+    "answer": 0,
+    "explain": "The write lock waits for all readers, including the current thread. Release the read lock first, or use StampedLock's `tryConvertToWriteLock`."
+  },
+  {
+    "q": "Why must `unlock()` of a `ReentrantLock` be in a `finally` block?",
+    "options": ["If the body throws, the lock is never released", "unlock() doesn't work outside finally", "To make the lock fair", "It's only a style convention"],
+    "answer": 0,
+    "explain": "Unlike `synchronized`, explicit locks aren't released automatically. A missed unlock blocks every other thread forever."
+  },
+  {
+    "q": "What is the ABA problem with CAS?",
+    "options": ["The value changes A → B → A, so CAS succeeds although the state changed in between", "Two threads both read A and both succeed", "CAS fails forever under contention", "CAS on references compares equals() instead of identity"],
+    "answer": 0,
+    "explain": "It matters in lock-free structures that reuse nodes. `AtomicStampedReference` pairs the reference with a version number."
+  },
+  {
+    "q": "Why is `LongAdder` faster than `AtomicLong` for a hot counter?",
+    "options": ["It spreads updates across cells, so threads rarely contend on one CAS", "It uses a lock instead of CAS", "It skips memory barriers", "It batches updates and flushes them periodically"],
+    "answer": 0,
+    "explain": "Contending CAS loops retry constantly. LongAdder gives threads separate cells and adds them up in `sum()`, which isn't an atomic snapshot."
+  },
+  {
+    "q": "What is special about `SynchronousQueue`?",
+    "options": ["It has no capacity: each put waits for a matching take", "It's a sorted queue", "It's a queue with one lock for put and take", "It holds exactly one element"],
+    "answer": 0,
+    "explain": "It's a direct handoff. `newCachedThreadPool` uses it, so each task either goes to an idle thread or triggers a new one."
+  },
+  {
+    "q": "After reading fields under `StampedLock.tryOptimisticRead()`, what must you do?",
+    "options": ["Call validate(stamp) and fall back to a real read lock if it fails", "Call unlockRead(stamp)", "Nothing: the read is already consistent", "Call tryConvertToWriteLock"],
+    "answer": 0,
+    "explain": "An optimistic read takes no lock. A writer may have changed the fields meanwhile, and `validate` detects that."
+  },
+  {
+    "q": "What's the main risk of `Executors.newFixedThreadPool(10)` under sustained overload?",
+    "options": ["OutOfMemoryError: its queue is unbounded", "It creates threads without limit", "It rejects tasks with an exception", "Threads die after 60 seconds"],
+    "answer": 0,
+    "explain": "It uses an unbounded `LinkedBlockingQueue`. In production, build a `ThreadPoolExecutor` with a bounded queue and a rejection policy."
+  },
+  {
+    "q": "How do `handle` and `exceptionally` of CompletableFuture differ?",
+    "options": ["handle is called on success and failure with (result, exception); exceptionally only on failure", "exceptionally is called always; handle only on failure", "handle rethrows; exceptionally swallows", "They're identical"],
+    "answer": 0,
+    "explain": "`handle` can transform both outcomes. `exceptionally` maps an exception to a fallback value and passes successful results through."
+  }
+]
