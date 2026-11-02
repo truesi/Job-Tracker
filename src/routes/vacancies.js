@@ -36,8 +36,12 @@ router.get('/vacancies', async (req, res) => {
   if (f.remote) add('v.remote_type = ?', f.remote);
   if (f.country) add('v.location_country = ?', f.country.toUpperCase());
   if (f.fit) add('v.salary_fit = ?', f.fit);
-  if (f.status) add('v.status = ?', f.status);
-  else where.push(`v.status NOT IN ('skipped','closed','applied_before')`);
+  if (f.status === 'rejected') where.push('s.is_closed');
+  else {
+    if (f.status) add('v.status = ?', f.status);
+    else where.push(`v.status NOT IN ('skipped','closed','applied_before')`);
+    where.push('s.is_closed IS NOT TRUE');
+  }
   if (f.kz) add('v.open_to_kz = ?', f.kz);
   if (f.min_score) add('v.match_score >= ?', Number(f.min_score));
   if (f.applied === 'yes') where.push('a.id IS NOT NULL');

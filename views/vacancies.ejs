@@ -18,7 +18,8 @@
     <option value="no" <%= f.kz === 'no' ? 'selected' : '' %>>KZ: нет</option>
     <option value="unknown" <%= f.kz === 'unknown' ? 'selected' : '' %>>KZ: неизвестно</option></select>
   <select name="status"><option value="">Активные</option>
-    <% Object.entries(fmt.labels.status).forEach(([k, l]) => { %><option value="<%= k %>" <%= f.status === k ? 'selected' : '' %>><%= l %></option><% }) %></select>
+    <% Object.entries(fmt.labels.status).forEach(([k, l]) => { %><option value="<%= k %>" <%= f.status === k ? 'selected' : '' %>><%= l %></option><% }) %>
+    <option value="rejected" <%= f.status === 'rejected' ? 'selected' : '' %>>Отказ по отклику</option></select>
   <select name="applied"><option value="">Отклик: все</option>
     <option value="no" <%= f.applied === 'no' ? 'selected' : '' %>>Без отклика</option>
     <option value="yes" <%= f.applied === 'yes' ? 'selected' : '' %>>С откликом</option></select>
